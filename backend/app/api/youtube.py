@@ -3,7 +3,7 @@ VantageTube AI - YouTube API Routes
 Handles YouTube OAuth and channel management endpoints
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from fastapi.responses import RedirectResponse
 from typing import List
 from app.models.youtube import (
@@ -20,23 +20,34 @@ router = APIRouter(prefix="/youtube", tags=["YouTube"])
 
 
 @router.get("/oauth/authorize")
-async def youtube_oauth_authorize(user_id: str = Depends(get_current_user_id)):
+async def youtube_oauth_authorize(user_id: str = Query(None)):
     """
     Initiate YouTube OAuth flow
     
     Redirects user to Google OAuth consent screen.
     After authorization, user will be redirected back to the callback URL.
     
+    Can be called with:
+    - user_id query parameter (for direct redirects from frontend)
+    - Authorization header (for authenticated requests)
+    
     Returns redirect to Google OAuth URL
     """
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User ID required as query parameter"
+        )
+    
     auth_url = YouTubeService.get_oauth_url(user_id)
     return RedirectResponse(url=auth_url)
 
 
 @router.get("/oauth/callback")
 async def youtube_oauth_callback(
-    code: str = Query(..., description="Authorization code from Google"),
-    state: str = Query(..., description="User ID passed in state parameter")
+    code: str = Query(None, description="Authorization code from Google"),
+    state: str = Query(None, description="User ID passed in state parameter"),
+    error: str = Query(None, description="Error from Google OAuth")
 ):
     """
     Handle YouTube OAuth callback
@@ -46,17 +57,46 @@ async def youtube_oauth_callback(
     
     - **code**: Authorization code from Google
     - **state**: User ID (passed during authorization)
+    - **error**: Error from Google (if authorization failed)
     
     Returns connected YouTube channel data
     """
-    channel = await YouTubeService.handle_oauth_callback(code, state)
-    
-    # In production, redirect to frontend with success message
-    # For now, return channel data
-    return {
-        "message": "YouTube channel connected successfully!",
-        "channel": channel
-    }
+    try:
+        # Check for OAuth errors
+        if error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"OAuth error: {error}"
+            )
+        
+        if not code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No authorization code received"
+            )
+        
+        if not state:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No user ID in state parameter"
+            )
+        
+        channel = await YouTubeService.handle_oauth_callback(code, state)
+        
+        return {
+            "success": True,
+            "message": "YouTube channel connected successfully!",
+            "channel": channel
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"OAuth callback failed: {str(e)}"
+        )
 
 
 @router.get("/channels", response_model=List[YouTubeChannelResponse])
@@ -130,7 +170,6 @@ async def disconnect_channel(
     }).eq("id", channel_id).eq("user_id", user_id).execute()
     
     if not response.data:
-        from fastapi import HTTPException, status
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Channel not found"

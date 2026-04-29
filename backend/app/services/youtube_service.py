@@ -9,7 +9,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
 from app.core.config import settings
-from app.core.supabase import get_supabase
+from app.core.supabase import get_supabase, get_supabase_admin
 from app.models.youtube import (
     YouTubeChannelResponse,
     VideoResponse,
@@ -142,7 +142,7 @@ class YouTubeService:
                 "last_synced_at": datetime.utcnow().isoformat()
             }
             
-            supabase = get_supabase()
+            supabase = get_supabase_admin()  # Use admin client to bypass RLS
             
             # Check if channel already exists
             existing = supabase.table("youtube_channels").select("*").eq("channel_id", channel_info["channel_id"]).execute()

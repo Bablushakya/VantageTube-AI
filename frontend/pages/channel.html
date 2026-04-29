@@ -76,76 +76,8 @@
         </div>
       </header>
 
-      <main class="page-content">
-
-        <!-- Channel Header -->
-        <div class="channel-header-card">
-          <div class="channel-avatar">TA</div>
-          <div class="channel-info">
-            <h2>TechWithAlex</h2>
-            <div class="channel-handle">@techwithAlex</div>
-            <div class="channel-meta">
-              <div class="channel-meta-item">👥 <strong>48.2K</strong> subscribers</div>
-              <div class="channel-meta-item">🎬 <strong>87</strong> videos</div>
-              <div class="channel-meta-item">👁️ <strong>2.1M</strong> total views</div>
-              <div class="channel-meta-item">📅 Joined <strong>March 2021</strong></div>
-              <div class="channel-meta-item">🌍 <strong>United States</strong></div>
-            </div>
-          </div>
-          <div class="channel-header-actions">
-            <span class="badge badge-success">✓ Connected</span>
-            <button class="btn btn-outline btn-sm" onclick="refreshChannel()">🔄 Refresh</button>
-            <button class="btn btn-primary btn-sm" onclick="syncChannel()">🔄 Sync Videos</button>
-          </div>
-        </div>
-
-        <!-- Channel Stats -->
-        <div class="stats-grid" style="margin-bottom:var(--space-xl);">
-          <div class="stat-card">
-            <div class="stat-icon" style="background:rgba(108,99,255,0.12);">👥</div>
-            <div class="stat-value">48.2K</div>
-            <div class="stat-label">Subscribers</div>
-            <div class="stat-change up">↑ +1.2K this week</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="background:rgba(59,130,246,0.12);">👁️</div>
-            <div class="stat-value">2.1M</div>
-            <div class="stat-label">Total Views</div>
-            <div class="stat-change up">↑ +84K this month</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="background:rgba(16,185,129,0.12);">📊</div>
-            <div class="stat-value">67/100</div>
-            <div class="stat-label">Avg. SEO Score</div>
-            <div class="stat-change up">↑ +5 pts this week</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="background:rgba(245,158,11,0.12);">💬</div>
-            <div class="stat-value">6.2%</div>
-            <div class="stat-label">Avg. Engagement</div>
-            <div class="stat-change down">↓ -0.3% vs last month</div>
-          </div>
-        </div>
-
-        <!-- Videos Section -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">All Videos (87)</span>
-            <div style="display:flex;gap:var(--space-sm);">
-              <select onchange="sortVideos(this.value)" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:6px 10px;color:var(--text-primary);font-size:0.8rem;">
-                <option value="latest">Sort: Latest</option>
-                <option value="views">Sort: Most Views</option>
-                <option value="seo">Sort: SEO Score</option>
-                <option value="engagement">Sort: Engagement</option>
-              </select>
-              <button class="btn btn-primary btn-sm" onclick="syncChannel()">🔄 Sync All</button>
-            </div>
-          </div>
-          <div class="videos-grid" id="videosGrid">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-
+      <main class="page-content" id="pageContent">
+        <!-- Content will be populated by JavaScript -->
       </main>
     </div>
   </div>

@@ -30,17 +30,21 @@ async function loadChannelData() {
     
     if (!channels || channels.length === 0) {
       showNoChannelState();
+      hideLoadingState();
       return;
     }
     
     // Use first channel
     currentChannel = channels[0];
     
-    // Render channel header
+    // Load channel videos first
+    await loadChannelVideos(currentChannel.id);
+    
+    // Render channel header (after videos are loaded for stats)
     renderChannelHeader(currentChannel);
     
-    // Load channel videos
-    await loadChannelVideos(currentChannel.id);
+    // Render videos
+    renderVideos(channelVideos);
     
     // Load user for sidebar
     const user = await api.getCurrentUser();
@@ -58,79 +62,92 @@ async function loadChannelData() {
  * Render channel header
  */
 function renderChannelHeader(channel) {
-  // Update avatar
-  const avatarEl = document.querySelector('.channel-avatar');
-  if (channel.thumbnail_url) {
-    avatarEl.style.backgroundImage = `url(${channel.thumbnail_url})`;
-    avatarEl.style.backgroundSize = 'cover';
-    avatarEl.style.backgroundPosition = 'center';
-    avatarEl.textContent = '';
-  } else {
-    const initials = channel.title.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    avatarEl.textContent = initials;
-  }
+  const pageContent = document.getElementById('pageContent');
   
-  // Update channel info
-  document.querySelector('.channel-info h2').textContent = channel.title;
-  document.querySelector('.channel-handle').textContent = `@${channel.custom_url || channel.title.replace(/\s+/g, '').toLowerCase()}`;
-  
-  // Update meta items
-  const metaContainer = document.querySelector('.channel-meta');
-  metaContainer.innerHTML = `
-    <div class="channel-meta-item">👥 <strong>${formatNumber(channel.subscriber_count || 0)}</strong> subscribers</div>
-    <div class="channel-meta-item">🎬 <strong>${formatNumber(channel.video_count || 0)}</strong> videos</div>
-    <div class="channel-meta-item">👁️ <strong>${formatNumber(channel.view_count || 0)}</strong> total views</div>
-    <div class="channel-meta-item">📅 Joined <strong>${formatDate(channel.published_at)}</strong></div>
-    <div class="channel-meta-item">🌍 <strong>${channel.country || 'Unknown'}</strong></div>
+  // Create channel header HTML
+  const headerHTML = `
+    <div class="channel-header-card">
+      <div class="channel-avatar" ${channel.thumbnail_url ? `style="background-image: url('${channel.thumbnail_url}'); background-size: cover; background-position: center;"` : ''}>${!channel.thumbnail_url ? (channel.channel_name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)) : ''}</div>
+      <div class="channel-info">
+        <h2>${escapeHtml(channel.channel_name)}</h2>
+        <div class="channel-handle">@${escapeHtml(channel.channel_handle || channel.channel_name.replace(/\s+/g, '').toLowerCase())}</div>
+        <div class="channel-meta">
+          <div class="channel-meta-item">👥 <strong>${formatNumber(channel.subscriber_count || 0)}</strong> subscribers</div>
+          <div class="channel-meta-item">🎬 <strong>${formatNumber(channel.video_count || 0)}</strong> videos</div>
+          <div class="channel-meta-item">👁️ <strong>${formatNumber(channel.view_count || 0)}</strong> total views</div>
+          <div class="channel-meta-item">📅 Joined <strong>${formatDate(channel.published_at)}</strong></div>
+          <div class="channel-meta-item">🌍 <strong>${channel.country || 'Unknown'}</strong></div>
+        </div>
+      </div>
+      <div class="channel-header-actions">
+        <span class="badge badge-success">✓ Connected</span>
+        <button class="btn btn-outline btn-sm" onclick="refreshChannel()">🔄 Refresh</button>
+        <button class="btn btn-primary btn-sm" onclick="syncChannel()">🔄 Sync Videos</button>
+      </div>
+    </div>
   `;
   
-  // Update stats cards
-  updateStatsCards(channel);
-}
-
-/**
- * Update stats cards
- */
-function updateStatsCards(channel) {
-  const statsGrid = document.querySelector('.stats-grid');
-  if (!statsGrid) return;
-  
-  // Calculate average SEO score from videos
+  // Create stats grid HTML
   const avgSeoScore = channelVideos.length > 0
     ? Math.round(channelVideos.reduce((sum, v) => sum + (v.seo_score || 0), 0) / channelVideos.length)
     : 0;
   
-  // Calculate engagement rate (likes / views * 100)
   const totalLikes = channelVideos.reduce((sum, v) => sum + (v.like_count || 0), 0);
   const totalViews = channelVideos.reduce((sum, v) => sum + (v.view_count || 0), 0);
   const engagementRate = totalViews > 0 ? ((totalLikes / totalViews) * 100).toFixed(1) : 0;
   
-  statsGrid.innerHTML = `
-    <div class="stat-card">
-      <div class="stat-icon" style="background:rgba(108,99,255,0.12);">👥</div>
-      <div class="stat-value">${formatNumber(channel.subscriber_count || 0)}</div>
-      <div class="stat-label">Subscribers</div>
-      <div class="stat-change">Total subscribers</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon" style="background:rgba(59,130,246,0.12);">👁️</div>
-      <div class="stat-value">${formatNumber(channel.view_count || 0)}</div>
-      <div class="stat-label">Total Views</div>
-      <div class="stat-change">All-time views</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon" style="background:rgba(16,185,129,0.12);">📊</div>
-      <div class="stat-value">${avgSeoScore}/100</div>
-      <div class="stat-label">Avg. SEO Score</div>
-      <div class="stat-change">${channelVideos.length} videos analyzed</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon" style="background:rgba(245,158,11,0.12);">💬</div>
-      <div class="stat-value">${engagementRate}%</div>
-      <div class="stat-label">Avg. Engagement</div>
-      <div class="stat-change">Likes to views ratio</div>
+  const statsHTML = `
+    <div class="stats-grid" style="margin-bottom:var(--space-xl);">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(108,99,255,0.12);">👥</div>
+        <div class="stat-value">${formatNumber(channel.subscriber_count || 0)}</div>
+        <div class="stat-label">Subscribers</div>
+        <div class="stat-change">Total subscribers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(59,130,246,0.12);">👁️</div>
+        <div class="stat-value">${formatNumber(channel.view_count || 0)}</div>
+        <div class="stat-label">Total Views</div>
+        <div class="stat-change">All-time views</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(16,185,129,0.12);">📊</div>
+        <div class="stat-value">${avgSeoScore}/100</div>
+        <div class="stat-label">Avg. SEO Score</div>
+        <div class="stat-change">${channelVideos.length} videos analyzed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(245,158,11,0.12);">💬</div>
+        <div class="stat-value">${engagementRate}%</div>
+        <div class="stat-label">Avg. Engagement</div>
+        <div class="stat-change">Likes to views ratio</div>
+      </div>
     </div>
   `;
+  
+  // Create videos section HTML
+  const videosHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">All Videos (${channelVideos.length})</span>
+        <div style="display:flex;gap:var(--space-sm);">
+          <select onchange="sortVideos(this.value)" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:6px 10px;color:var(--text-primary);font-size:0.8rem;">
+            <option value="latest">Sort: Latest</option>
+            <option value="views">Sort: Most Views</option>
+            <option value="seo">Sort: SEO Score</option>
+            <option value="engagement">Sort: Engagement</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="syncChannel()">🔄 Sync All</button>
+        </div>
+      </div>
+      <div class="videos-grid" id="videosGrid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  `;
+  
+  // Update page content
+  pageContent.innerHTML = headerHTML + statsHTML + videosHTML;
 }
 
 /**
@@ -139,20 +156,9 @@ function updateStatsCards(channel) {
 async function loadChannelVideos(channelId) {
   try {
     channelVideos = await api.getChannelVideos(channelId, 100);
-    
-    // Update video count in header
-    const cardTitle = document.querySelector('.card-title');
-    if (cardTitle) {
-      cardTitle.textContent = `All Videos (${channelVideos.length})`;
-    }
-    
-    // Render videos
-    renderVideos(channelVideos);
-    
-    // Update stats with video data
-    updateStatsCards(currentChannel);
   } catch (error) {
     console.error('Failed to load videos:', error);
+    channelVideos = [];
     showToast('Failed to load videos', 'error');
   }
 }
@@ -303,13 +309,33 @@ async function connectChannel() {
   try {
     showToast('Redirecting to YouTube...', 'info');
     
-    // Get OAuth URL
-    const response = await api.getYouTubeAuthURL();
+    // Get auth token
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      showToast('Not authenticated. Please login first.', 'error');
+      return;
+    }
     
-    // Redirect to OAuth URL
-    window.location.href = response.authorization_url;
+    // Get user ID from saved user data
+    const userData = localStorage.getItem('user_data');
+    if (!userData) {
+      showToast('User data not found. Please login again.', 'error');
+      return;
+    }
+    
+    const user = JSON.parse(userData);
+    const userId = user.id;
+    
+    if (!userId) {
+      showToast('User ID not found. Please login again.', 'error');
+      return;
+    }
+    
+    // Redirect directly to OAuth authorize endpoint with user_id as query parameter
+    // The backend will use this user_id to generate the OAuth URL
+    window.location.href = `http://localhost:8000/api/youtube/oauth/authorize?user_id=${encodeURIComponent(userId)}`;
   } catch (error) {
-    console.error('Failed to get OAuth URL:', error);
+    console.error('Failed to connect channel:', error);
     showToast('Failed to connect channel. Please try again.', 'error');
   }
 }
