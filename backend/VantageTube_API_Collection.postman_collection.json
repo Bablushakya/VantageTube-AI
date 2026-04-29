@@ -1,0 +1,677 @@
+{
+  "info": {
+    "_postman_id": "vantagetube-ai-collection",
+    "name": "VantageTube AI API",
+    "description": "Complete API collection for VantageTube AI - YouTube Creator Optimization Platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"TestPassword123!\",\n  \"confirm_password\": \"TestPassword123!\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\",\n  \"display_name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"TestPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Check Auth Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/check",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "check"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Updated\",\n  \"last_name\": \"Name\",\n  \"display_name\": \"Updated User\",\n  \"username\": \"updateduser\",\n  \"country\": \"us\",\n  \"niche\": \"tech\",\n  \"bio\": \"I create tech content\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"TestPassword123!\",\n  \"new_password\": \"NewPassword123!\",\n  \"confirm_password\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["users", "change-password"]
+            }
+          }
+        },
+        {
+          "name": "Get User Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/settings",
+              "host": ["{{base_url}}"],
+              "path": ["users", "settings"]
+            }
+          }
+        },
+        {
+          "name": "Update User Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"theme\": \"dark\",\n  \"accent_color\": \"#6C63FF\",\n  \"font_size\": \"normal\",\n  \"compact_mode\": false,\n  \"email_notifications\": true,\n  \"weekly_seo_report\": true,\n  \"trending_alerts\": true,\n  \"feature_updates\": true,\n  \"milestone_alerts\": true,\n  \"profile_visibility\": true,\n  \"analytics_sharing\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/settings",
+              "host": ["{{base_url}}"],
+              "path": ["users", "settings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Content Generation",
+      "item": [
+        {
+          "name": "Generate Titles",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"How to learn Python programming\",\n  \"keywords\": [\"python\", \"programming\", \"tutorial\"],\n  \"tone\": \"educational\",\n  \"target_audience\": \"beginners\",\n  \"count\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/content/generate/titles",
+              "host": ["{{base_url}}"],
+              "path": ["content", "generate", "titles"]
+            }
+          }
+        },
+        {
+          "name": "Generate Description",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"How to learn Python programming\",\n  \"title\": \"Python for Beginners - Complete Tutorial\",\n  \"keywords\": [\"python\", \"programming\", \"tutorial\"],\n  \"tone\": \"educational\",\n  \"target_audience\": \"beginners\",\n  \"video_length\": \"long\",\n  \"include_timestamps\": true,\n  \"include_links\": true,\n  \"include_cta\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/content/generate/description",
+              "host": ["{{base_url}}"],
+              "path": ["content", "generate", "description"]
+            }
+          }
+        },
+        {
+          "name": "Generate Tags",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"How to learn Python programming\",\n  \"title\": \"Python for Beginners - Complete Tutorial\",\n  \"keywords\": [\"python\", \"programming\"],\n  \"count\": 15\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/content/generate/tags",
+              "host": ["{{base_url}}"],
+              "path": ["content", "generate", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Generate Thumbnail Text",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"How to learn Python programming\",\n  \"title\": \"Python for Beginners - Complete Tutorial\",\n  \"count\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/content/generate/thumbnail-text",
+              "host": ["{{base_url}}"],
+              "path": ["content", "generate", "thumbnail-text"]
+            }
+          }
+        },
+        {
+          "name": "Get Content History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/content/history?content_type=title&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["content", "history"],
+              "query": [
+                {
+                  "key": "content_type",
+                  "value": "title"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Content Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/content/stats",
+              "host": ["{{base_url}}"],
+              "path": ["content", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SEO Analysis",
+      "item": [
+        {
+          "name": "Analyze Video SEO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"video_id\": \"video-123\",\n  \"force_reanalysis\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/seo/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["seo", "analyze"]
+            }
+          }
+        },
+        {
+          "name": "Get Video SEO Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/seo/videos/video-123/reports",
+              "host": ["{{base_url}}"],
+              "path": ["seo", "videos", "video-123", "reports"]
+            }
+          }
+        },
+        {
+          "name": "Get SEO Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/seo/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["seo", "dashboard", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trending Topics",
+      "item": [
+        {
+          "name": "Fetch Trending Videos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"region\": \"US\",\n  \"category_id\": \"28\",\n  \"max_results\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/trending/fetch",
+              "host": ["{{base_url}}"],
+              "path": ["trending", "fetch"]
+            }
+          }
+        },
+        {
+          "name": "Filter Trending Videos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"keywords\": [\"python\", \"programming\"],\n  \"min_views\": 100000,\n  \"min_viral_score\": 50,\n  \"region\": \"US\",\n  \"limit\": 20\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/trending/filter",
+              "host": ["{{base_url}}"],
+              "path": ["trending", "filter"]
+            }
+          }
+        },
+        {
+          "name": "Get Trending Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trending/stats?region=US",
+              "host": ["{{base_url}}"],
+              "path": ["trending", "stats"],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "US"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Trending Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trending/dashboard?region=US",
+              "host": ["{{base_url}}"],
+              "path": ["trending", "dashboard"],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "US"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get YouTube Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trending/categories",
+              "host": ["{{base_url}}"],
+              "path": ["trending", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Supported Regions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trending/regions",
+              "host": ["{{base_url}}"],
+              "path": ["trending", "regions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "YouTube Integration",
+      "item": [
+        {
+          "name": "Get YouTube Channels",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/youtube/channels",
+              "host": ["{{base_url}}"],
+              "path": ["youtube", "channels"]
+            }
+          }
+        },
+        {
+          "name": "Sync Channel Videos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/youtube/channels/channel-123/sync?max_results=50",
+              "host": ["{{base_url}}"],
+              "path": ["youtube", "channels", "channel-123", "sync"],
+              "query": [
+                {
+                  "key": "max_results",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Channel Videos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/youtube/channels/channel-123/videos",
+              "host": ["{{base_url}}"],
+              "path": ["youtube", "channels", "channel-123", "videos"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "API Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

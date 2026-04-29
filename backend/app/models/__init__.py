@@ -1,0 +1,115 @@
+"""
+VantageTube AI - Models Package
+"""
+
+from app.models.user import (
+    UserBase,
+    UserCreate,
+    UserLogin,
+    UserUpdate,
+    UserResponse,
+    Token,
+    TokenData,
+    PasswordChange
+)
+from app.models.settings import (
+    UserSettingsBase,
+    UserSettingsCreate,
+    UserSettingsUpdate,
+    UserSettingsResponse
+)
+from app.models.youtube import (
+    YouTubeChannelBase,
+    YouTubeChannelCreate,
+    YouTubeChannelUpdate,
+    YouTubeChannelResponse,
+    VideoBase,
+    VideoCreate,
+    VideoUpdate,
+    VideoResponse,
+    OAuthCallbackData,
+    ChannelSyncResponse
+)
+from app.models.content import (
+    ContentGenerationRequest,
+    TitleGenerationRequest,
+    DescriptionGenerationRequest,
+    TagsGenerationRequest,
+    ThumbnailTextRequest,
+    GeneratedTitle,
+    GeneratedTitles,
+    GeneratedDescription,
+    GeneratedTags,
+    ThumbnailTextSuggestion,
+    GeneratedThumbnailText,
+    SaveGeneratedContentRequest,
+    GeneratedContentResponse,
+    ContentHistoryResponse
+)
+from app.models.trending import (
+    TrendingVideoBase,
+    TrendingVideoCreate,
+    TrendingVideoResponse,
+    TrendingFetchRequest,
+    TrendingFilterRequest,
+    ViralScoreBreakdown,
+    TrendingAnalysis,
+    TrendingDashboardResponse,
+    TrendingStatsResponse,
+    YouTubeCategory,
+    NicheRecommendation,
+    ContentOpportunity,
+    YOUTUBE_CATEGORIES
+)
+
+__all__ = [
+    "UserBase",
+    "UserCreate",
+    "UserLogin",
+    "UserUpdate",
+    "UserResponse",
+    "Token",
+    "TokenData",
+    "PasswordChange",
+    "UserSettingsBase",
+    "UserSettingsCreate",
+    "UserSettingsUpdate",
+    "UserSettingsResponse",
+    "YouTubeChannelBase",
+    "YouTubeChannelCreate",
+    "YouTubeChannelUpdate",
+    "YouTubeChannelResponse",
+    "VideoBase",
+    "VideoCreate",
+    "VideoUpdate",
+    "VideoResponse",
+    "OAuthCallbackData",
+    "ChannelSyncResponse",
+    "ContentGenerationRequest",
+    "TitleGenerationRequest",
+    "DescriptionGenerationRequest",
+    "TagsGenerationRequest",
+    "ThumbnailTextRequest",
+    "GeneratedTitle",
+    "GeneratedTitles",
+    "GeneratedDescription",
+    "GeneratedTags",
+    "ThumbnailTextSuggestion",
+    "GeneratedThumbnailText",
+    "SaveGeneratedContentRequest",
+    "GeneratedContentResponse",
+    "ContentHistoryResponse",
+    "TrendingVideoBase",
+    "TrendingVideoCreate",
+    "TrendingVideoResponse",
+    "TrendingFetchRequest",
+    "TrendingFilterRequest",
+    "ViralScoreBreakdown",
+    "TrendingAnalysis",
+    "TrendingDashboardResponse",
+    "TrendingStatsResponse",
+    "YouTubeCategory",
+    "NicheRecommendation",
+    "ContentOpportunity",
+    "YOUTUBE_CATEGORIES"
+]

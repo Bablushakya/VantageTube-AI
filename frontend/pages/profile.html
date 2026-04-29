@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile – VantageTube AI</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <link rel="stylesheet" href="../css/profile-settings.css" />
+</head>
+<body>
+
+  <!-- Mobile sidebar overlay -->
+  <div id="sidebarOverlay"
+       style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;"
+       onclick="closeSidebar()"></div>
+
+  <div class="app-layout">
+
+    <!-- ================================================
+         SIDEBAR
+         ================================================ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🎬</div>
+        <span class="logo-text">Vantage<span>Tube</span> AI</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <span class="nav-section-label">Main</span>
+
+        <a href="dashboard.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+          </svg>
+          Dashboard
+        </a>
+
+        <a href="channel.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+            <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor"/>
+          </svg>
+          Channel Overview
+        </a>
+
+        <span class="nav-section-label">Tools</span>
+
+        <a href="analyzer.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          Video Analyzer
+        </a>
+
+        <a href="generator.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          AI Generator
+        </a>
+
+        <a href="trending.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>
+          Trending Ideas
+        </a>
+
+        <span class="nav-section-label">Account</span>
+
+        <a href="profile.html" class="nav-item active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          Profile
+        </a>
+
+        <a href="settings.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Settings
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">TA</div>
+          <div class="user-info">
+            <div class="user-name" id="sidebarUserName">TechWithAlex</div>
+            <div class="user-plan">Free Plan</div>
+          </div>
+          <span style="color:var(--text-muted);font-size:0.8rem;">⋯</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================================================
+         MAIN CONTENT
+         ================================================ -->
+    <div class="main-content">
+
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+          <span class="topbar-title">My Profile</span>
+        </div>
+        <div class="topbar-right">
+          <button class="topbar-icon-btn" title="Notifications">
+            🔔<span class="notif-dot"></span>
+          </button>
+          <a href="settings.html" class="btn btn-ghost btn-sm">⚙️ Settings</a>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-content">
+
+        <!-- Page Header Banner -->
+        <div class="page-header-banner">
+          <div>
+            <h2>👤 My Profile</h2>
+            <p>Manage your personal information and connected YouTube channel.</p>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-outline btn-sm" id="editProfileBtn" onclick="enableEditMode()">
+              ✏️ Edit Profile
+            </button>
+            <button class="btn btn-primary btn-sm" id="saveProfileBtn"
+                    style="display:none;" onclick="saveProfile()">
+              💾 Save Changes
+            </button>
+            <button class="btn btn-ghost btn-sm" id="cancelEditBtn"
+                    style="display:none;" onclick="cancelEditMode()">
+              Cancel
+            </button>
+          </div>
+        </div>
+
+        <!-- Profile Layout -->
+        <div class="profile-layout">
+
+          <!-- ============ LEFT: Avatar Card ============ -->
+          <div class="avatar-card">
+
+            <div class="profile-avatar-wrap">
+              <div class="profile-avatar" id="profileAvatarDisplay">TA</div>
+              <button class="avatar-edit-btn" title="Change photo" onclick="handleAvatarUpload()">
+                📷
+              </button>
+            </div>
+
+            <div class="avatar-name" id="avatarDisplayName">TechWithAlex</div>
+            <div class="avatar-email" id="avatarDisplayEmail">alex@techwithAlex.com</div>
+
+            <span class="badge badge-primary">⭐ Free Plan</span>
+
+            <!-- Quick Stats -->
+            <div class="avatar-stats">
+              <div class="avatar-stat">
+                <div class="as-value">87</div>
+                <div class="as-label">Videos</div>
+              </div>
+              <div class="avatar-stat">
+                <div class="as-value">48.2K</div>
+                <div class="as-label">Subscribers</div>
+              </div>
+              <div class="avatar-stat">
+                <div class="as-value">67</div>
+                <div class="as-label">Avg SEO</div>
+              </div>
+              <div class="avatar-stat">
+                <div class="as-value">2.1M</div>
+                <div class="as-label">Views</div>
+              </div>
+            </div>
+
+            <div class="avatar-card-divider"></div>
+
+            <!-- Quick Links -->
+            <div class="avatar-card-links">
+              <button class="avatar-card-link" onclick="window.location.href='channel.html'">
+                <span class="acl-icon">📺</span> View Channel
+              </button>
+              <button class="avatar-card-link" onclick="window.location.href='analyzer.html'">
+                <span class="acl-icon">📊</span> Analyze Videos
+              </button>
+              <button class="avatar-card-link" onclick="window.location.href='settings.html'">
+                <span class="acl-icon">⚙️</span> Account Settings
+              </button>
+              <button class="avatar-card-link danger" onclick="confirmLogout()">
+                <span class="acl-icon">🚪</span> Log Out
+              </button>
+            </div>
+
+          </div>
+
+          <!-- ============ RIGHT: Info Cards ============ -->
+          <div class="profile-right">
+
+            <!-- Personal Information -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Personal Information</span>
+                <span class="edit-mode-indicator" id="editModeIndicator">
+                  <span class="blink"></span> Editing
+                </span>
+              </div>
+
+              <div class="card-section-label">Basic Details</div>
+
+              <div class="profile-form-grid">
+
+                <div class="profile-form-group">
+                  <label class="profile-label" for="firstName">First Name</label>
+                  <input type="text" id="firstName" class="profile-input" value="Alex" disabled />
+                </div>
+
+                <div class="profile-form-group">
+                  <label class="profile-label" for="lastName">Last Name</label>
+                  <input type="text" id="lastName" class="profile-input" value="Johnson" disabled />
+                </div>
+
+                <div class="profile-form-group">
+                  <label class="profile-label" for="displayName">Display Name</label>
+                  <input type="text" id="displayName" class="profile-input" value="TechWithAlex" disabled />
+                  <span class="field-hint">This is shown on your dashboard and reports.</span>
+                </div>
+
+                <div class="profile-form-group">
+                  <label class="profile-label" for="username">Username</label>
+                  <input type="text" id="username" class="profile-input" value="@techwithAlex" disabled />
+                </div>
+
+                <div class="profile-form-group full-width">
+                  <label class="profile-label" for="email">Email Address</label>
+                  <input type="email" id="email" class="profile-input readonly-field"
+                         value="alex@techwithAlex.com" disabled readonly />
+                  <span class="field-hint">🔒 Email cannot be changed. Contact support if needed.</span>
+                </div>
+
+                <div class="profile-form-group">
+                  <label class="profile-label" for="country">Country</label>
+                  <select id="country" class="profile-input" disabled>
+                    <option value="us" selected>🇺🇸 United States</option>
+                    <option value="uk">🇬🇧 United Kingdom</option>
+                    <option value="ca">🇨🇦 Canada</option>
+                    <option value="au">🇦🇺 Australia</option>
+                    <option value="in">🇮🇳 India</option>
+                    <option value="de">🇩🇪 Germany</option>
+                    <option value="fr">🇫🇷 France</option>
+                    <option value="other">🌍 Other</option>
+                  </select>
+                </div>
+
+                <div class="profile-form-group">
+                  <label class="profile-label" for="niche">Content Niche</label>
+                  <select id="niche" class="profile-input" disabled>
+                    <option value="tech" selected>💻 Tech & Gadgets</option>
+                    <option value="gaming">🎮 Gaming</option>
+                    <option value="cooking">🍳 Cooking & Food</option>
+                    <option value="fitness">💪 Fitness & Health</option>
+                    <option value="finance">💰 Personal Finance</option>
+                    <option value="education">📚 Education</option>
+                    <option value="entertainment">🎭 Entertainment</option>
+                    <option value="travel">✈️ Travel</option>
+                  </select>
+                </div>
+
+                <div class="profile-form-group full-width">
+                  <label class="profile-label" for="bio">Bio</label>
+                  <textarea id="bio" class="profile-input" rows="3" disabled
+                    style="resize:vertical;">Weekly tech reviews, tutorials, and gadget unboxings. Helping you make smarter tech decisions since 2021.</textarea>
+                  <span class="field-hint">Brief description shown on your public profile.</span>
+                </div>
+
+              </div>
+
+              <div class="profile-form-actions">
+                <button class="btn btn-ghost btn-sm" id="cancelBtnInCard"
+                        style="display:none;" onclick="cancelEditMode()">
+                  Cancel
+                </button>
+                <button class="btn btn-primary btn-sm" id="saveBtnInCard"
+                        style="display:none;" onclick="saveProfile()">
+                  💾 Save Changes
+                </button>
+              </div>
+            </div>
+
+            <!-- Connected Channel -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Connected YouTube Channel</span>
+                <span class="badge badge-success">✓ Connected</span>
+              </div>
+
+              <div class="channel-connect-card">
+                <div class="channel-connect-avatar">TA</div>
+                <div class="channel-connect-info">
+                  <div class="channel-connect-name">TechWithAlex</div>
+                  <div class="channel-connect-handle">@techwithAlex · youtube.com/@techwithAlex</div>
+                  <div class="channel-connect-meta">
+                    <span>👥 <strong>48.2K</strong> subscribers</span>
+                    <span>🎬 <strong>87</strong> videos</span>
+                    <span>👁️ <strong>2.1M</strong> total views</span>
+                    <span>📅 Connected <strong>Jan 2024</strong></span>
+                  </div>
+                </div>
+                <div class="channel-connect-actions">
+                  <button class="btn btn-ghost btn-sm" onclick="refreshChannelData()">
+                    🔄 Refresh
+                  </button>
+                  <button class="btn btn-sm"
+                          style="background:rgba(239,68,68,0.1);color:var(--danger);border:1px solid rgba(239,68,68,0.3);"
+                          onclick="disconnectChannel()">
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+
+              <div style="margin-top:var(--space-md);padding:var(--space-md);background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:var(--radius-md);">
+                <div style="font-size:0.8rem;color:var(--success);font-weight:600;margin-bottom:4px;">
+                  ✅ OAuth Connection Active
+                </div>
+                <div style="font-size:0.75rem;color:var(--text-muted);">
+                  VantageTube AI has read-only access to your channel data. We never post or modify your content.
+                  Token expires in <strong style="color:var(--text-secondary);">28 days</strong>.
+                </div>
+              </div>
+            </div>
+
+            <!-- Current Plan -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Current Plan</span>
+                <a href="#" class="card-action" onclick="showToast('Upgrade coming in Phase 2!', 'info'); return false;">
+                  Upgrade →
+                </a>
+              </div>
+
+              <div class="plan-card">
+                <div class="plan-info">
+                  <h4>
+                    ⭐ Free Plan
+                    <span class="badge badge-primary">Current</span>
+                  </h4>
+                  <p>Great for getting started with YouTube SEO optimization.</p>
+                  <div class="plan-features">
+                    <div class="plan-feature-item">
+                      <span class="pf-check">✓</span> 10 video analyses per month
+                    </div>
+                    <div class="plan-feature-item">
+                      <span class="pf-check">✓</span> AI content generation (5/day)
+                    </div>
+                    <div class="plan-feature-item">
+                      <span class="pf-check">✓</span> Trending topics (top 6)
+                    </div>
+                    <div class="plan-feature-item">
+                      <span class="pf-lock">🔒</span>
+                      <span style="color:var(--text-muted);">Unlimited analyses (Pro)</span>
+                    </div>
+                    <div class="plan-feature-item">
+                      <span class="pf-lock">🔒</span>
+                      <span style="color:var(--text-muted);">Competitor analysis (Pro)</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="flex-shrink:0;">
+                  <button class="btn btn-primary"
+                          onclick="showToast('Upgrade coming in Phase 2!', 'info')">
+                    🚀 Upgrade to Pro
+                  </button>
+                  <div style="font-size:0.72rem;color:var(--text-muted);text-align:center;margin-top:6px;">
+                    From $9/month
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Account Info -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Account Information</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+                <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);">
+                  <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;">Member Since</div>
+                  <div style="font-size:0.9rem;font-weight:600;color:var(--text-primary);" data-field="member-since">January 2024</div>
+                </div>
+                <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);">
+                  <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;">Last Login</div>
+                  <div style="font-size:0.9rem;font-weight:600;color:var(--text-primary);" data-field="last-login">Today, 8:14 AM</div>
+                </div>
+                <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);">
+                  <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;">Login Method</div>
+                  <div style="font-size:0.9rem;font-weight:600;color:var(--text-primary);">📧 Email</div>
+                </div>
+                <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);">
+                  <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;">Account Status</div>
+                  <div style="font-size:0.9rem;font-weight:600;color:var(--success);">✅ Active</div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /profile-right -->
+        </div><!-- /profile-layout -->
+
+      </main>
+    </div><!-- /main-content -->
+  </div><!-- /app-layout -->
+
+  <!-- Scripts -->
+  <script src="../js/main.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/profile.js"></script>
+
+</body>
+</html>

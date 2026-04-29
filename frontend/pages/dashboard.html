@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard – VantageTube AI</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+</head>
+<body>
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;" onclick="document.querySelector('.sidebar').classList.remove('open');this.style.display='none';"></div>
+
+  <div class="app-layout">
+
+    <!-- ============================================
+         SIDEBAR
+         ============================================ -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🎬</div>
+        <span class="logo-text">Vantage<span>Tube</span> AI</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <span class="nav-section-label">Main</span>
+
+        <a href="dashboard.html" class="nav-item active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+
+        <a href="channel.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor"/></svg>
+          Channel Overview
+        </a>
+
+        <span class="nav-section-label">Tools</span>
+
+        <a href="analyzer.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Video Analyzer
+        </a>
+
+        <a href="generator.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          AI Generator
+        </a>
+
+        <a href="trending.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Trending Ideas
+        </a>
+
+        <span class="nav-section-label">Account</span>
+
+        <a href="profile.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Profile
+        </a>
+
+        <a href="settings.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">TA</div>
+          <div class="user-info">
+            <div class="user-name">TechWithAlex</div>
+            <div class="user-plan">Free Plan</div>
+          </div>
+          <span style="color:var(--text-muted);font-size:0.8rem;">⋯</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============================================
+         MAIN CONTENT
+         ============================================ -->
+    <div class="main-content">
+
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').style.display='block';">☰</button>
+          <span class="topbar-title">Dashboard</span>
+        </div>
+        <div class="topbar-right">
+          <button class="topbar-icon-btn" title="Notifications">
+            🔔
+            <span class="notif-dot"></span>
+          </button>
+          <button class="topbar-icon-btn" title="Help">❓</button>
+          <button class="btn btn-ghost btn-sm logout-btn" onclick="logout()">Log Out</button>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-content">
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+          <div class="welcome-text">
+            <h2 id="welcomeMessage">Good morning! 👋</h2>
+            <p>Here's what's happening with your channel today.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="analyzer.html" class="btn btn-outline btn-sm">📊 Analyze Video</a>
+            <a href="generator.html" class="btn btn-primary btn-sm">✨ Generate Content</a>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" style="display: none; text-align: center; padding: 40px;">
+          <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto 20px;"></div>
+          <p style="color: var(--text-muted);">Loading your dashboard...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" style="display: none; text-align: center; padding: 40px;">
+          <p style="color: var(--danger); margin-bottom: 20px;">Failed to load dashboard data</p>
+          <button class="btn btn-primary" onclick="loadDashboard()">Retry</button>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboardContent" style="display: none;">
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions-grid">
+          <a href="analyzer.html" class="quick-action-card">
+            <div class="qa-icon" style="background:rgba(108,99,255,0.12);">📊</div>
+            <span class="qa-label">Analyze SEO</span>
+          </a>
+          <a href="generator.html" class="quick-action-card">
+            <div class="qa-icon" style="background:rgba(255,101,132,0.12);">✨</div>
+            <span class="qa-label">AI Generate</span>
+          </a>
+          <a href="trending.html" class="quick-action-card">
+            <div class="qa-icon" style="background:rgba(16,185,129,0.12);">🔥</div>
+            <span class="qa-label">Trending Ideas</span>
+          </a>
+          <a href="channel.html" class="quick-action-card">
+            <div class="qa-icon" style="background:rgba(245,158,11,0.12);">📺</div>
+            <span class="qa-label">My Channel</span>
+          </a>
+        </div>
+
+        <!-- Two Column Grid -->
+        <div class="dashboard-grid">
+
+          <!-- Recent Videos -->
+          <div class="card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+              <span class="card-title">Recent Videos</span>
+              <a href="channel.html" class="card-action">View all →</a>
+            </div>
+            <div class="table-container">
+              <table class="data-table" id="recentVideosTable">
+                <thead>
+                  <tr>
+                    <th>Video</th>
+                    <th>Views</th>
+                    <th>Likes</th>
+                    <th>SEO Score</th>
+                    <th>Published</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="recentVideosBody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom Grid -->
+        <div class="dashboard-grid">
+
+          <!-- Activity Feed -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Recent Activity</span>
+            </div>
+            <div class="activity-feed" id="activityFeed">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Top Trending Preview -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">🔥 Trending in Your Niche</span>
+              <a href="trending.html" class="card-action">See all →</a>
+            </div>
+            <div id="trendingPreview">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+        </div>
+
+        </div>
+        <!-- End Dashboard Content -->
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/main.js"></script>
+  <script src="../js/dashboard.js"></script>
+
+</body>
+</html>

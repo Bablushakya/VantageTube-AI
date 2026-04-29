@@ -1,0 +1,471 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings – VantageTube AI</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <link rel="stylesheet" href="../css/profile-settings.css" />
+</head>
+<body>
+
+  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;" onclick="closeSidebar()"></div>
+
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🎬</div>
+        <span class="logo-text">Vantage<span>Tube</span> AI</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="channel.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor"/></svg>
+          Channel Overview
+        </a>
+        <span class="nav-section-label">Tools</span>
+        <a href="analyzer.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Video Analyzer
+        </a>
+        <a href="generator.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          AI Generator
+        </a>
+        <a href="trending.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Trending Ideas
+        </a>
+        <span class="nav-section-label">Account</span>
+        <a href="profile.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Profile
+        </a>
+        <a href="settings.html" class="nav-item active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">TA</div>
+          <div class="user-info">
+            <div class="user-name">TechWithAlex</div>
+            <div class="user-plan">Free Plan</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+          <span class="topbar-title">Settings</span>
+        </div>
+        <div class="topbar-right">
+          <button class="topbar-icon-btn">🔔<span class="notif-dot"></span></button>
+          <a href="profile.html" class="btn btn-ghost btn-sm">👤 Profile</a>
+        </div>
+      </header>
+
+      <main class="page-content">
+
+        <div class="page-header-banner">
+          <div>
+            <h2>⚙️ Settings</h2>
+            <p>Manage your preferences, notifications, and account settings.</p>
+          </div>
+        </div>
+
+        <div class="settings-layout">
+
+          <!-- Settings Nav (left) -->
+          <div class="settings-nav">
+            <button class="settings-nav-item active" onclick="switchSettingsSection('appearance', this)">
+              <span class="sni-icon">🎨</span> Appearance
+            </button>
+            <button class="settings-nav-item" onclick="switchSettingsSection('notifications', this)">
+              <span class="sni-icon">🔔</span> Notifications
+            </button>
+            <button class="settings-nav-item" onclick="switchSettingsSection('account', this)">
+              <span class="sni-icon">🔐</span> Account
+            </button>
+            <button class="settings-nav-item" onclick="switchSettingsSection('apps', this)">
+              <span class="sni-icon">🔗</span> Connected Apps
+            </button>
+            <button class="settings-nav-item" onclick="switchSettingsSection('privacy', this)">
+              <span class="sni-icon">🛡️</span> Privacy & Data
+            </button>
+          </div>
+
+          <!-- Settings Sections (right) -->
+          <div class="settings-sections">
+
+            <!-- APPEARANCE -->
+            <div class="settings-section active" id="section-appearance">
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Appearance</span>
+                </div>
+                <div class="card-section-label">Display Settings</div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Dark Mode</div>
+                    <div class="settings-row-desc">Use dark theme across the application</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="darkModeToggle" checked onchange="markChanged()">
+                      <span class="toggle-track"></span>
+                      <span class="toggle-thumb"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Theme</div>
+                    <div class="settings-row-desc">Choose your preferred color theme</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <div class="theme-selector">
+                      <div class="theme-option selected" onclick="selectTheme('dark', this)">
+                        <div class="theme-preview theme-preview-dark">
+                          <div class="tp-bar"></div>
+                          <div class="tp-bar"></div>
+                          <div class="tp-bar"></div>
+                          <span class="theme-check">✓</span>
+                        </div>
+                        <span class="theme-label">Dark</span>
+                      </div>
+                      <div class="theme-option" onclick="selectTheme('light', this)">
+                        <div class="theme-preview theme-preview-light">
+                          <div class="tp-bar"></div>
+                          <div class="tp-bar"></div>
+                          <div class="tp-bar"></div>
+                          <span class="theme-check">✓</span>
+                        </div>
+                        <span class="theme-label">Light</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Accent Color</div>
+                    <div class="settings-row-desc">Customize the primary accent color</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <div class="accent-picker">
+                      <div class="accent-swatch selected" style="background:#6C63FF;" onclick="selectAccent(this, '#6C63FF')"></div>
+                      <div class="accent-swatch" style="background:#FF6584;" onclick="selectAccent(this, '#FF6584')"></div>
+                      <div class="accent-swatch" style="background:#10B981;" onclick="selectAccent(this, '#10B981')"></div>
+                      <div class="accent-swatch" style="background:#F59E0B;" onclick="selectAccent(this, '#F59E0B')"></div>
+                      <div class="accent-swatch" style="background:#3B82F6;" onclick="selectAccent(this, '#3B82F6')"></div>
+                      <div class="accent-swatch" style="background:#EF4444;" onclick="selectAccent(this, '#EF4444')"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Font Size</div>
+                    <div class="settings-row-desc">Adjust text size for better readability</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <select class="profile-input" style="width:auto;min-width:120px;" onchange="markChanged()">
+                      <option value="small">Small</option>
+                      <option value="normal" selected>Normal</option>
+                      <option value="large">Large</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Compact Mode</div>
+                    <div class="settings-row-desc">Reduce spacing for more content on screen</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" onchange="markChanged()">
+                      <span class="toggle-track"></span>
+                      <span class="toggle-thumb"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- NOTIFICATIONS -->
+            <div class="settings-section" id="section-notifications">
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Notification Preferences</span>
+                </div>
+                <div class="card-section-label">Email Notifications</div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Email Notifications</div>
+                    <div class="settings-row-desc">Receive updates and alerts via email</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" checked onchange="markChanged()">
+                      <span class="toggle-track"></span>
+                      <span class="toggle-thumb"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Weekly SEO Report</div>
+                    <div class="settings-row-desc">Get a weekly summary of your channel's SEO performance</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" checked onchange="markChanged()">
+                      <span class="toggle-track"></span>
+                      <span class="toggle-thumb"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Trending Alerts</div>
+                    <div class="settings-row-desc">Notify me when new trending topics appear in my niche</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" checked onchange="markChanged()">
+                      <span class="toggle-track"></span>
+                      <span class="toggle-thumb"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">New Feature Updates</div>
+                    <div class="settings-row-desc">Be the first to know about new features and improvements</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" onchange="markChanged()">
+                      <span class="toggle-track"></span>
+                      <span class="toggle-thumb"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Channel Milestone Alerts</div>
+                    <div class="settings-row-desc">Celebrate when you hit subscriber or view milestones</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" checked onchange="markChanged()">
+                      <span class="toggle-track"></span>
+                      <span class="toggle-thumb"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ACCOUNT -->
+            <div class="settings-section" id="section-account">
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Change Password</span>
+                </div>
+                <div class="card-section-label">Security</div>
+
+                <div class="password-fields">
+                  <div class="pw-field-group">
+                    <label class="pw-label" for="currentPw">Current Password</label>
+                    <div class="pw-input-wrap">
+                      <input type="password" id="currentPw" class="pw-input" placeholder="Enter current password">
+                      <button class="pw-toggle" onclick="togglePwVisibility('currentPw', this)">👁️</button>
+                    </div>
+                  </div>
+
+                  <div class="pw-field-group">
+                    <label class="pw-label" for="newPw">New Password</label>
+                    <div class="pw-input-wrap">
+                      <input type="password" id="newPw" class="pw-input" placeholder="Enter new password" oninput="checkNewPwStrength(this.value)">
+                      <button class="pw-toggle" onclick="togglePwVisibility('newPw', this)">👁️</button>
+                    </div>
+                    <div class="pw-strength-bar">
+                      <div class="pw-strength-fill" id="pwStrengthFill"></div>
+                    </div>
+                    <div class="pw-strength-text" id="pwStrengthText">Enter a password</div>
+                  </div>
+
+                  <div class="pw-field-group">
+                    <label class="pw-label" for="confirmPw">Confirm New Password</label>
+                    <div class="pw-input-wrap">
+                      <input type="password" id="confirmPw" class="pw-input" placeholder="Confirm new password">
+                      <button class="pw-toggle" onclick="togglePwVisibility('confirmPw', this)">👁️</button>
+                    </div>
+                  </div>
+
+                  <button class="btn btn-primary" onclick="savePassword()">💾 Save Password</button>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Account Actions</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+                  <button class="btn btn-ghost" onclick="showToast('Logout feature coming in Phase 2', 'info')">
+                    🚪 Log Out
+                  </button>
+                  <button class="btn btn-ghost" onclick="showToast('Export feature coming in Phase 2', 'info')">
+                    📥 Export My Data
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- CONNECTED APPS -->
+            <div class="settings-section" id="section-apps">
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Connected Apps & Services</span>
+                </div>
+                <div class="card-section-label">Integrations</div>
+
+                <div class="connected-app-row">
+                  <div class="app-icon-box" style="background:rgba(255,0,0,0.1);">📺</div>
+                  <div class="app-info">
+                    <div class="app-name">YouTube</div>
+                    <div class="app-status connected">✅ Connected · @techwithAlex</div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" onclick="showToast('Disconnect feature coming in Phase 2', 'info')">Disconnect</button>
+                </div>
+
+                <div class="connected-app-row">
+                  <div class="app-icon-box" style="background:rgba(255,165,0,0.1);">📊</div>
+                  <div class="app-info">
+                    <div class="app-name">Google Analytics</div>
+                    <div class="app-status">Not connected</div>
+                  </div>
+                  <button class="btn btn-primary btn-sm" onclick="showToast('Connect feature coming in Phase 2', 'info')">Connect</button>
+                </div>
+
+                <div class="connected-app-row">
+                  <div class="app-icon-box" style="background:rgba(29,161,242,0.1);">🐦</div>
+                  <div class="app-info">
+                    <div class="app-name">Twitter / X</div>
+                    <div class="app-status">Not connected</div>
+                  </div>
+                  <button class="btn btn-primary btn-sm" onclick="showToast('Connect feature coming in Phase 2', 'info')">Connect</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- PRIVACY & DATA -->
+            <div class="settings-section" id="section-privacy">
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Privacy & Data</span>
+                </div>
+                <div class="card-section-label">Privacy Settings</div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Profile Visibility</div>
+                    <div class="settings-row-desc">Make your profile visible to other users</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" checked onchange="markChanged()">
+                      <span class="toggle-track"></span>
+                      <span class="toggle-thumb"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label">Analytics Sharing</div>
+                    <div class="settings-row-desc">Share anonymous usage data to help improve VantageTube AI</div>
+                  </div>
+                  <div class="settings-row-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" checked onchange="markChanged()">
+                      <span class="toggle-track"></span>
+                      <span class="toggle-thumb"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="danger-zone-card">
+                <div class="danger-zone-title">⚠️ Danger Zone</div>
+                <div class="danger-action-row">
+                  <div class="danger-action-info">
+                    <div class="dai-title">Delete All Reports</div>
+                    <div class="dai-desc">Permanently delete all SEO reports and generated content</div>
+                  </div>
+                  <button class="btn-danger" onclick="confirmAction('delete reports')">Delete Reports</button>
+                </div>
+                <div class="danger-action-row">
+                  <div class="danger-action-info">
+                    <div class="dai-title">Disconnect All Channels</div>
+                    <div class="dai-desc">Remove all connected YouTube channels from your account</div>
+                  </div>
+                  <button class="btn-danger" onclick="confirmAction('disconnect channels')">Disconnect All</button>
+                </div>
+                <div class="danger-action-row">
+                  <div class="danger-action-info">
+                    <div class="dai-title">Delete Account</div>
+                    <div class="dai-desc">Permanently delete your account and all associated data</div>
+                  </div>
+                  <button class="btn-danger" onclick="confirmAction('delete account')">Delete Account</button>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /settings-sections -->
+        </div><!-- /settings-layout -->
+
+      </main>
+    </div><!-- /main-content -->
+  </div><!-- /app-layout -->
+
+  <!-- Save Banner -->
+  <div class="save-banner" id="saveBanner">
+    <div class="save-banner-text"><strong>Unsaved changes</strong> — Don't forget to save your settings.</div>
+    <div class="save-banner-actions">
+      <button class="btn btn-ghost btn-sm" onclick="discardChanges()">Discard</button>
+      <button class="btn btn-primary btn-sm" onclick="saveAllSettings()">💾 Save Settings</button>
+    </div>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/settings.js"></script>
+
+</body>
+</html>

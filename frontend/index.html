@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VantageTube AI – YouTube Creator Optimization Platform</title>
+  <meta name="description" content="AI-powered YouTube SEO optimization. Analyze your videos, generate optimized titles, descriptions, and tags, and discover trending topics in your niche." />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/landing.css" />
+</head>
+<body>
+
+  <!-- ============================================
+       NAVBAR
+       ============================================ -->
+  <nav class="navbar" id="navbar">
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon">🎬</div>
+      <span>Vantage<span style="color:var(--primary-light)">Tube</span> AI</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#testimonials">Reviews</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <a href="auth.html" class="btn btn-outline btn-sm">Log In</a>
+      <a href="auth.html" class="btn btn-primary btn-sm">Get Started Free</a>
+    </div>
+
+    <button class="nav-mobile-toggle" aria-label="Toggle menu">☰</button>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#testimonials">Reviews</a>
+    <a href="#pricing">Pricing</a>
+    <a href="auth.html" class="btn btn-primary btn-sm" style="text-align:center;">Get Started Free</a>
+  </div>
+
+  <!-- ============================================
+       HERO SECTION
+       ============================================ -->
+  <section class="hero" id="home">
+    <div class="hero-glow-1"></div>
+    <div class="hero-glow-2"></div>
+
+    <div class="container" style="display:flex; align-items:center; gap:var(--space-3xl); width:100%;">
+
+      <!-- Left: Text Content -->
+      <div class="hero-content animate-fade-in-up">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          AI-Powered YouTube Optimization
+        </div>
+
+        <h1 class="hero-title">
+          Grow Your Channel with
+          <span class="gradient-text">AI-Driven SEO</span>
+        </h1>
+
+        <p class="hero-description">
+          Stop guessing what works. VantageTube AI analyzes your videos, scores your SEO,
+          generates optimized titles and descriptions, and surfaces trending topics in your
+          niche — all in one place.
+        </p>
+
+        <div class="hero-actions">
+          <a href="auth.html" class="btn btn-primary btn-lg">
+            🚀 Start for Free
+          </a>
+          <a href="pages/dashboard.html" class="btn btn-ghost btn-lg">
+            👀 View Demo
+          </a>
+        </div>
+
+        <div class="hero-stats">
+          <div class="hero-stat-item">
+            <div class="value">10K+</div>
+            <div class="label">Creators</div>
+          </div>
+          <div class="hero-stat-item">
+            <div class="value">500K+</div>
+            <div class="label">Videos Analyzed</div>
+          </div>
+          <div class="hero-stat-item">
+            <div class="value">+43%</div>
+            <div class="label">Avg. View Increase</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Mockup Visual -->
+      <div class="hero-visual">
+
+        <!-- Floating Cards -->
+        <div class="floating-card floating-card-1">
+          <div class="fc-label">SEO Score</div>
+          <div class="fc-value">82 / 100</div>
+          <div class="fc-change">↑ +14 pts this week</div>
+        </div>
+        <div class="floating-card floating-card-2">
+          <div class="fc-label">Trending Topic</div>
+          <div class="fc-value">🔥 AI Laptops</div>
+          <div class="fc-change">2.4M searches/mo</div>
+        </div>
+
+        <!-- Main Mockup Card -->
+        <div class="hero-mockup">
+          <div class="mockup-header">
+            <div class="mockup-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <span class="mockup-title">VantageTube AI – Video Analyzer</span>
+          </div>
+
+          <!-- Score Ring -->
+          <div class="mockup-score-ring">
+            <svg class="score-ring-svg" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%"   stop-color="#6C63FF"/>
+                  <stop offset="100%" stop-color="#FF6584"/>
+                </linearGradient>
+              </defs>
+              <circle class="score-ring-bg"   cx="50" cy="50" r="40"/>
+              <circle class="score-ring-fill" cx="50" cy="50" r="40"/>
+            </svg>
+            <div class="score-ring-value">82</div>
+            <div class="score-ring-text">SEO Score — Good</div>
+          </div>
+
+          <!-- Suggestions Preview -->
+          <div class="mockup-suggestions">
+            <div class="suggestion-item">
+              <div class="s-icon good">✓</div>
+              <span>Title has target keyword</span>
+            </div>
+            <div class="suggestion-item">
+              <div class="s-icon warn">!</div>
+              <span>Description could be longer</span>
+            </div>
+            <div class="suggestion-item">
+              <div class="s-icon bad">✗</div>
+              <span>Missing chapter timestamps</span>
+            </div>
+            <div class="suggestion-item">
+              <div class="s-icon good">✓</div>
+              <span>8 relevant tags found</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================
+       STATS BANNER
+       ============================================ -->
+  <div class="stats-banner">
+    <div class="container">
+      <div class="stats-banner-grid">
+        <div class="banner-stat">
+          <div class="value" data-count="10000">10K+</div>
+          <div class="label">Active Creators</div>
+        </div>
+        <div class="banner-stat">
+          <div class="value" data-count="500000">500K+</div>
+          <div class="label">Videos Analyzed</div>
+        </div>
+        <div class="banner-stat">
+          <div class="value">43%</div>
+          <div class="label">Avg. View Growth</div>
+        </div>
+        <div class="banner-stat">
+          <div class="value">4.9★</div>
+          <div class="label">Creator Rating</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       FEATURES SECTION
+       ============================================ -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="text-center">
+        <div class="badge badge-primary mb-md">✨ Core Features</div>
+        <h2 class="section-title">Everything You Need to Grow</h2>
+        <p class="section-subtitle">
+          A complete toolkit for YouTube creators — from SEO analysis to AI content generation.
+        </p>
+      </div>
+
+      <div class="features-grid">
+
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(108,99,255,0.12);">📊</div>
+          <h3 class="feature-title">Video SEO Analyzer</h3>
+          <p class="feature-desc">
+            Get a detailed SEO score for every video. Understand exactly what's working
+            and what needs improvement — title, description, tags, and more.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(255,101,132,0.12);">✨</div>
+          <h3 class="feature-title">AI Content Generator</h3>
+          <p class="feature-desc">
+            Generate optimized titles, descriptions, and tags in seconds using AI.
+            Just describe your video and let the AI do the heavy lifting.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(16,185,129,0.12);">🔥</div>
+          <h3 class="feature-title">Trending Topic Finder</h3>
+          <p class="feature-desc">
+            Discover what's trending in your niche right now. Get viral score,
+            search volume, and content ideas before your competitors do.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(245,158,11,0.12);">📈</div>
+          <h3 class="feature-title">Channel Analytics</h3>
+          <p class="feature-desc">
+            View your channel's key metrics at a glance. Track subscriber growth,
+            total views, and overall SEO health in one clean dashboard.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(59,130,246,0.12);">🖼️</div>
+          <h3 class="feature-title">Thumbnail Prompt Generator</h3>
+          <p class="feature-desc">
+            Get AI-generated thumbnail text and concept suggestions tailored to
+            your video topic to maximize click-through rates.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(139,133,255,0.12);">🔗</div>
+          <h3 class="feature-title">YouTube Integration</h3>
+          <p class="feature-desc">
+            Connect your YouTube channel with one click via OAuth. Automatically
+            pull your video data for instant analysis — no manual input needed.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       HOW IT WORKS
+       ============================================ -->
+  <section class="how-section" id="how-it-works">
+    <div class="container">
+      <div class="text-center">
+        <div class="badge badge-success mb-md">🚀 Simple Process</div>
+        <h2 class="section-title">Get Started in 4 Steps</h2>
+        <p class="section-subtitle">
+          From signup to your first AI-optimized video in under 5 minutes.
+        </p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <h3 class="step-title">Create Account</h3>
+          <p class="step-desc">Sign up with email or Google in seconds. No credit card required.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <h3 class="step-title">Connect Channel</h3>
+          <p class="step-desc">Link your YouTube channel via secure OAuth. We only read your data.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <h3 class="step-title">Analyze Videos</h3>
+          <p class="step-desc">Get instant SEO scores and actionable suggestions for every video.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-number">4</div>
+          <h3 class="step-title">Optimize & Grow</h3>
+          <p class="step-desc">Apply AI suggestions, discover trends, and watch your channel grow.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       TESTIMONIALS
+       ============================================ -->
+  <section class="testimonials-section" id="testimonials">
+    <div class="container">
+      <div class="text-center">
+        <div class="badge badge-warning mb-md">⭐ Creator Reviews</div>
+        <h2 class="section-title">Loved by Creators</h2>
+        <p class="section-subtitle">
+          Real results from real YouTube creators who use VantageTube AI.
+        </p>
+      </div>
+
+      <div class="testimonials-grid">
+
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">
+            "My average views per video went from 2K to 8K in just 6 weeks after using
+            VantageTube AI. The SEO analyzer showed me exactly what I was doing wrong."
+          </p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:linear-gradient(135deg,#6C63FF,#FF6584);">MK</div>
+            <div>
+              <div class="author-name">Marcus K.</div>
+              <div class="author-handle">@markusgaming · 24K subs</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">
+            "The AI title generator is insane. I used to spend 30 minutes writing titles.
+            Now I get 3 great options in 10 seconds and my CTR has doubled."
+          </p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:linear-gradient(135deg,#10B981,#3B82F6);">SR</div>
+            <div>
+              <div class="author-name">Sarah R.</div>
+              <div class="author-handle">@sarahcooks · 67K subs</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★☆</div>
+          <p class="testimonial-text">
+            "The trending topics feature helped me find a video idea that got 180K views —
+            my biggest video ever. I had no idea that topic was blowing up."
+          </p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:linear-gradient(135deg,#F59E0B,#EF4444);">JT</div>
+            <div>
+              <div class="author-name">James T.</div>
+              <div class="author-handle">@techwithjames · 12K subs</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       CTA SECTION
+       ============================================ -->
+  <section class="cta-section" id="pricing">
+    <div class="container">
+      <div class="cta-box">
+        <div class="badge badge-primary mb-md">🎓 Academic Prototype</div>
+        <h2 class="cta-title">
+          Ready to Optimize Your<br/>
+          <span class="gradient-text">YouTube Channel?</span>
+        </h2>
+        <p class="cta-desc">
+          Join thousands of creators using AI to grow their channels faster.
+          Start for free — no credit card required.
+        </p>
+        <div class="cta-actions">
+          <a href="auth.html" class="btn btn-primary btn-lg">
+            🚀 Get Started Free
+          </a>
+          <a href="pages/dashboard.html" class="btn btn-ghost btn-lg">
+            👀 Explore Demo
+          </a>
+        </div>
+        <p style="margin-top:var(--space-lg); font-size:0.78rem; color:var(--text-muted);">
+          ✓ Free to use &nbsp;·&nbsp; ✓ No credit card &nbsp;·&nbsp; ✓ Connect in 60 seconds
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       FOOTER
+       ============================================ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="logo-text">
+            <div class="logo-icon" style="width:28px;height:28px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:0.85rem;">🎬</div>
+            Vantage<span style="color:var(--primary-light)">Tube</span> AI
+          </div>
+          <p>AI-powered YouTube optimization platform for creators who want to grow smarter, not harder.</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#features">Features</a></li>
+            <li><a href="pages/dashboard.html">Dashboard</a></li>
+            <li><a href="pages/analyzer.html">SEO Analyzer</a></li>
+            <li><a href="pages/generator.html">AI Generator</a></li>
+            <li><a href="pages/trending.html">Trending Ideas</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="#">Documentation</a></li>
+            <li><a href="#">YouTube SEO Guide</a></li>
+            <li><a href="#">Creator Blog</a></li>
+            <li><a href="#">API Reference</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2024 VantageTube AI. Academic Prototype — Final Year Engineering Project.</span>
+        <span>Built with ❤️ for YouTube Creators</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/main.js"></script>
+  <script>
+    // Animate hero score ring on load
+    window.addEventListener('load', () => {
+      const ring = document.querySelector('.score-ring-fill');
+      if (ring) {
+        // 82% score: dashoffset = 251 * (1 - 0.82) = ~45
+        setTimeout(() => { ring.style.strokeDashoffset = '45'; }, 300);
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trending Ideas – VantageTube AI</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+</head>
+<body>
+
+  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;" onclick="document.querySelector('.sidebar').classList.remove('open');this.style.display='none';"></div>
+
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🎬</div>
+        <span class="logo-text">Vantage<span>Tube</span> AI</span>
+      </div>
+      <nav class="sidebar-nav">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="channel.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor"/></svg>
+          Channel Overview
+        </a>
+        <span class="nav-section-label">Tools</span>
+        <a href="analyzer.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Video Analyzer
+        </a>
+        <a href="generator.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          AI Generator
+        </a>
+        <a href="trending.html" class="nav-item active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Trending Ideas
+        </a>
+        <span class="nav-section-label">Account</span>
+        <a href="profile.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Profile
+        </a>
+        <a href="settings.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">TA</div>
+          <div class="user-info">
+            <div class="user-name">TechWithAlex</div>
+            <div class="user-plan">Free Plan</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').style.display='block';">☰</button>
+          <span class="topbar-title">Trending Ideas</span>
+        </div>
+        <div class="topbar-right">
+          <button class="topbar-icon-btn">🔔<span class="notif-dot"></span></button>
+          <button class="btn btn-ghost btn-sm" onclick="refreshTrending()">🔄 Refresh</button>
+        </div>
+      </header>
+
+      <main class="page-content">
+
+        <div style="margin-bottom:var(--space-lg);">
+          <h2 class="section-title">🔥 Trending Ideas</h2>
+          <p class="section-subtitle" style="margin-bottom:0;">Discover what's trending in your niche. Updated daily based on search trends and viral content signals.</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="trending-filters">
+          <button class="filter-chip active" onclick="filterTrending('all', this)">All Topics</button>
+          <button class="filter-chip" onclick="filterTrending('exploding', this)">🔥 Exploding</button>
+          <button class="filter-chip" onclick="filterTrending('rising', this)">📈 Rising</button>
+          <button class="filter-chip" onclick="filterTrending('growing', this)">🌱 Growing</button>
+          <button class="filter-chip" onclick="filterTrending('stable', this)">📊 Stable</button>
+
+          <div class="niche-select-wrapper">
+            <label style="font-size:0.8rem;color:var(--text-muted);">Niche:</label>
+            <select class="niche-select" onchange="changeNiche(this.value)">
+              <option value="tech" selected>Tech & Gadgets</option>
+              <option value="gaming">Gaming</option>
+              <option value="cooking">Cooking & Food</option>
+              <option value="fitness">Fitness & Health</option>
+              <option value="finance">Personal Finance</option>
+              <option value="education">Education</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-grid" style="margin-bottom:var(--space-xl);">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.12);">🔥</div>
+            <div class="stat-value">6</div>
+            <div class="stat-label">Trending Topics</div>
+            <div class="stat-change up">↑ 2 new today</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(108,99,255,0.12);">🔍</div>
+            <div class="stat-value">6.5M</div>
+            <div class="stat-label">Total Search Volume</div>
+            <div class="stat-change up">↑ in your niche</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(16,185,129,0.12);">🎯</div>
+            <div class="stat-value">3</div>
+            <div class="stat-label">Low Competition</div>
+            <div class="stat-change up">↑ Easy wins available</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.12);">⚡</div>
+            <div class="stat-value">94%</div>
+            <div class="stat-label">Top Viral Score</div>
+            <div class="stat-change up">↑ AI Laptops topic</div>
+          </div>
+        </div>
+
+        <!-- Trending Cards Grid -->
+        <div class="trending-grid" id="trendingGrid">
+          <!-- Populated by JS -->
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/trending.js"></script>
+
+</body>
+</html>

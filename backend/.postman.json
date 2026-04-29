@@ -1,0 +1,59 @@
+{
+  "workspace_id": "pending",
+  "collection_id": "pending",
+  "environment_id": "pending",
+  "api_base_url": "http://localhost:8000/api",
+  "endpoints": {
+    "auth": [
+      "POST /auth/register",
+      "POST /auth/login",
+      "GET /auth/me",
+      "POST /auth/logout",
+      "POST /auth/refresh",
+      "GET /auth/check"
+    ],
+    "users": [
+      "GET /users/me",
+      "PUT /users/me",
+      "POST /users/change-password",
+      "POST /users/avatar",
+      "DELETE /users/avatar",
+      "GET /users/settings",
+      "PUT /users/settings"
+    ],
+    "content": [
+      "POST /content/generate/titles",
+      "POST /content/generate/description",
+      "POST /content/generate/tags",
+      "POST /content/generate/thumbnail-text",
+      "GET /content/history",
+      "GET /content/history/{content_id}",
+      "DELETE /content/history/{content_id}",
+      "GET /content/stats"
+    ],
+    "seo": [
+      "POST /seo/analyze",
+      "GET /seo/videos/{video_id}/reports",
+      "GET /seo/dashboard/stats"
+    ],
+    "trending": [
+      "POST /trending/fetch",
+      "POST /trending/filter",
+      "GET /trending/videos/{video_id}/analyze",
+      "GET /trending/stats",
+      "GET /trending/dashboard",
+      "GET /trending/opportunities",
+      "GET /trending/categories",
+      "GET /trending/regions"
+    ],
+    "youtube": [
+      "GET /youtube/oauth/authorize",
+      "GET /youtube/oauth/callback",
+      "GET /youtube/channels",
+      "POST /youtube/channels/{channel_id}/sync",
+      "GET /youtube/channels/{channel_id}/videos",
+      "DELETE /youtube/channels/{channel_id}"
+    ]
+  },
+  "status": "ready_for_postman_import"
+}

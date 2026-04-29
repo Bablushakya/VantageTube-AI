@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Generator – VantageTube AI</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+</head>
+<body>
+
+  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;" onclick="document.querySelector('.sidebar').classList.remove('open');this.style.display='none';"></div>
+
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🎬</div>
+        <span class="logo-text">Vantage<span>Tube</span> AI</span>
+      </div>
+      <nav class="sidebar-nav">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="channel.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor"/></svg>
+          Channel Overview
+        </a>
+        <span class="nav-section-label">Tools</span>
+        <a href="analyzer.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Video Analyzer
+        </a>
+        <a href="generator.html" class="nav-item active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          AI Generator
+        </a>
+        <a href="trending.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Trending Ideas
+        </a>
+        <span class="nav-section-label">Account</span>
+        <a href="profile.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Profile
+        </a>
+        <a href="settings.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">TA</div>
+          <div class="user-info">
+            <div class="user-name">TechWithAlex</div>
+            <div class="user-plan">Free Plan</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').style.display='block';">☰</button>
+          <span class="topbar-title">AI Content Generator</span>
+        </div>
+        <div class="topbar-right">
+          <button class="topbar-icon-btn">🔔<span class="notif-dot"></span></button>
+          <a href="analyzer.html" class="btn btn-ghost btn-sm">📊 Analyzer</a>
+        </div>
+      </header>
+
+      <main class="page-content">
+
+        <div style="margin-bottom:var(--space-lg);">
+          <h2 class="section-title">AI Content Generator</h2>
+          <p class="section-subtitle" style="margin-bottom:0;">Describe your video and let AI generate optimized titles, descriptions, and tags.</p>
+        </div>
+
+        <div class="generator-layout">
+
+          <!-- LEFT: Input Form -->
+          <div class="card generator-form">
+            <div class="card-header">
+              <span class="card-title">✏️ Video Details</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Video Topic / Title (current)</label>
+              <input type="text" class="form-input" id="videoTopic"
+                placeholder="e.g. Top 10 Budget Laptops Under $500"
+                value="Top 10 Budget Laptops Under $500 in 2024"
+                oninput="updateCharCount('videoTopic', 'topicCount', 100)" />
+              <div class="char-count"><span id="topicCount">47</span>/100</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Video Description (brief)</label>
+              <textarea class="form-input" id="videoDesc" rows="3"
+                placeholder="What is your video about? What will viewers learn?"
+                oninput="updateCharCount('videoDesc', 'descCount', 500)">I review and rank the top 10 budget laptops under $500, testing performance, battery life, and build quality to help viewers make the best buying decision.</textarea>
+              <div class="char-count"><span id="descCount">163</span>/500</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Target Audience</label>
+              <input type="text" class="form-input" id="audience"
+                placeholder="e.g. Students, remote workers, budget-conscious buyers"
+                value="Students and budget-conscious buyers" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Primary Keyword</label>
+              <input type="text" class="form-input" id="keyword"
+                placeholder="e.g. budget laptops 2024"
+                value="budget laptops 2024" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Content Tone</label>
+              <select class="form-input" id="tone">
+                <option value="informative" selected>📚 Informative & Educational</option>
+                <option value="entertaining">🎉 Entertaining & Fun</option>
+                <option value="professional">💼 Professional & Authoritative</option>
+                <option value="casual">😊 Casual & Conversational</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Generate</label>
+              <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+                <label style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.85rem;color:var(--text-secondary);cursor:pointer;">
+                  <input type="checkbox" id="genTitles" checked style="accent-color:var(--primary);"> Optimized Titles (3 options)
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.85rem;color:var(--text-secondary);cursor:pointer;">
+                  <input type="checkbox" id="genDesc" checked style="accent-color:var(--primary);"> Full Description
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.85rem;color:var(--text-secondary);cursor:pointer;">
+                  <input type="checkbox" id="genTags" checked style="accent-color:var(--primary);"> SEO Tags (15 tags)
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.85rem;color:var(--text-secondary);cursor:pointer;">
+                  <input type="checkbox" id="genThumb" style="accent-color:var(--primary);"> Thumbnail Concept
+                </label>
+              </div>
+            </div>
+
+            <button class="btn btn-primary w-full" onclick="generateContent()" id="generateBtn">
+              ✨ Generate with AI
+            </button>
+            <div class="ai-generating" id="generatingIndicator">
+              <div class="ai-dot"></div>
+              <div class="ai-dot"></div>
+              <div class="ai-dot"></div>
+              <span>AI is generating your content...</span>
+            </div>
+          </div>
+
+          <!-- RIGHT: Output -->
+          <div>
+            <div class="card" id="outputCard">
+              <div class="card-header">
+                <span class="card-title">✨ Generated Content</span>
+                <button class="btn btn-ghost btn-sm" onclick="copyAllContent()">📋 Copy All</button>
+              </div>
+
+              <!-- Output Tabs -->
+              <div class="output-tabs">
+                <button class="output-tab active" onclick="switchOutputTab('titles', this)">Titles</button>
+                <button class="output-tab" onclick="switchOutputTab('description', this)">Description</button>
+                <button class="output-tab" onclick="switchOutputTab('tags', this)">Tags</button>
+                <button class="output-tab" onclick="switchOutputTab('thumbnail', this)">Thumbnail</button>
+              </div>
+
+              <!-- Titles Panel -->
+              <div class="output-panel active" id="panel-titles">
+                <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:var(--space-md);">
+                  3 AI-optimized title options. Click to select, copy to use.
+                </p>
+                <div id="titlesOutput">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+              <!-- Description Panel -->
+              <div class="output-panel" id="panel-description">
+                <div id="descriptionOutput">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+              <!-- Tags Panel -->
+              <div class="output-panel" id="panel-tags">
+                <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:var(--space-md);">
+                  Click any tag to copy it. Use all tags for maximum reach.
+                </p>
+                <div id="tagsOutput">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+              <!-- Thumbnail Panel -->
+              <div class="output-panel" id="panel-thumbnail">
+                <div id="thumbnailOutput">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/generator.js"></script>
+
+</body>
+</html>
