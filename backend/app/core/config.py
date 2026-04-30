@@ -39,6 +39,30 @@ class Settings(BaseSettings):
     # CORS Settings
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500"
     
+    # Rate Limiting Configuration
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_GENERATIONS_PER_DAY: int = 100
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 60
+    
+    # Caching Configuration
+    CACHE_ENABLED: bool = True
+    CACHE_TRENDING_TTL_HOURS: int = 1
+    CACHE_PREFERENCES_TTL_DAYS: int = 7
+    CACHE_STATS_TTL_HOURS: int = 24
+    
+    # Database Connection Pooling
+    DB_POOL_SIZE: int = 20
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_RECYCLE: int = 3600
+    
+    # Performance Targets (in seconds)
+    TITLE_GENERATION_TIMEOUT: int = 5
+    DESCRIPTION_GENERATION_TIMEOUT: int = 8
+    TAG_GENERATION_TIMEOUT: int = 5
+    THUMBNAIL_GENERATION_TIMEOUT: int = 5
+    BATCH_GENERATION_TIMEOUT: int = 30
+    
     @property
     def cors_origins(self) -> List[str]:
         """Parse CORS origins from comma-separated string"""

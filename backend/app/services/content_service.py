@@ -4,7 +4,7 @@ Handles storage and retrieval of generated content
 """
 
 from typing import List, Optional, Dict
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.core.supabase import get_supabase
 from app.models.content import GeneratedContentResponse, ContentHistoryResponse
 
@@ -231,6 +231,317 @@ class ContentService:
             
         except Exception as e:
             raise Exception(f"Failed to get content stats: {str(e)}")
+    
+    # ==================== Generator Feature Methods ====================
+    
+    async def save_batch_generation(
+        self,
+        user_id: str,
+        topic: str,
+        keywords: Optional[List[str]] = None,
+        tone: str = "professional",
+        target_audience: Optional[str] = None,
+        video_length: Optional[str] = None
+    ) -> str:
+        """
+        Save a batch generation record
+        
+        Args:
+            user_id: User ID
+            topic: Video topic
+            keywords: List of keywords
+            tone: Content tone
+            target_audience: Target audience
+            video_length: Video length
+            
+        Returns:
+            Batch ID
+        """
+        supabase = get_supabase()
+        
+        try:
+            result = supabase.table("generation_batches").insert({
+                "user_id": user_id,
+                "batch_type": "batch",
+                "topic": topic,
+                "keywords": keywords or [],
+                "tone": tone,
+                "target_audience": target_audience,
+                "video_length": video_length,
+                "created_at": datetime.utcnow().isoformat()
+            }).execute()
+            
+            if not result.data:
+                raise Exception("Failed to save batch generation")
+            
+            return result.data[0]["id"]
+            
+        except Exception as e:
+            raise Exception(f"Failed to save batch generation: {str(e)}")
+    
+    async def save_generated_content_with_batch(
+        self,
+        user_id: str,
+        content_type: str,
+        content: Dict,
+        batch_id: Optional[str] = None,
+        quality_score: Optional[float] = None,
+        video_id: Optional[str] = None,
+        prompt_used: Optional[str] = None
+    ) -> str:
+        """
+        Save generated content with batch association
+        
+        Args:
+            user_id: User ID
+            content_type: Type of content
+            content: Generated content data
+            batch_id: Associated batch ID
+            quality_score: Quality score (0-100)
+            video_id: Associated video ID
+            prompt_used: Prompt used for generation
+            
+        Returns:
+            Content ID
+        """
+        supabase = get_supabase()
+        
+        try:
+            result = supabase.table("generated_content").insert({
+                "user_id": user_id,
+                "content_type": content_type,
+                "content": content,
+                "batch_id": batch_id,
+                "quality_score": quality_score,
+                "video_id": video_id,
+                "prompt_used": prompt_used,
+                "created_at": datetime.utcnow().isoformat()
+            }).execute()
+            
+            if not result.data:
+                raise Exception("Failed to save generated content")
+            
+            return result.data[0]["id"]
+            
+        except Exception as e:
+            raise Exception(f"Failed to save generated content: {str(e)}")
+    
+    async def get_generation_history(
+        self,
+        user_id: str,
+        content_type: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0
+    ) -> Dict:
+        """
+        Get user's generation history with pagination
+        
+        Args:
+            user_id: User ID
+            content_type: Filter by content type
+            limit: Maximum results
+            offset: Pagination offset
+            
+        Returns:
+            Dictionary with total count and items
+        """
+        supabase = get_supabase()
+        
+        try:
+            # Get total count
+            count_query = supabase.table("generated_content").select("id", count="exact").eq("user_id", user_id)
+            
+            if content_type:
+                count_query = count_query.eq("content_type", content_type)
+            
+            count_result = count_query.execute()
+            total_count = count_result.count
+            
+            # Get paginated results
+            query = supabase.table("generated_content").select("*").eq("user_id", user_id)
+            
+            if content_type:
+                query = query.eq("content_type", content_type)
+            
+            result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            
+            items = result.data or []
+            
+            return {
+                "total_count": total_count,
+                "items": items,
+                "has_more": (offset + limit) < total_count
+            }
+            
+        except Exception as e:
+            raise Exception(f"Failed to get generation history: {str(e)}")
+    
+    async def save_user_preferences(
+        self,
+        user_id: str,
+        preferred_tone: Optional[str] = None,
+        preferred_keywords: Optional[List[str]] = None,
+        preferred_audience: Optional[str] = None
+    ) -> bool:
+        """
+        Save or update user generation preferences
+        
+        Args:
+            user_id: User ID
+            preferred_tone: Preferred tone
+            preferred_keywords: Preferred keywords
+            preferred_audience: Preferred audience
+            
+        Returns:
+            True if successful
+        """
+        supabase = get_supabase()
+        
+        try:
+            # Check if preferences exist
+            existing = supabase.table("user_generation_preferences").select("id").eq("user_id", user_id).execute()
+            
+            if existing.data:
+                # Update existing
+                supabase.table("user_generation_preferences").update({
+                    "preferred_tone": preferred_tone,
+                    "preferred_keywords": preferred_keywords or [],
+                    "preferred_audience": preferred_audience,
+                    "updated_at": datetime.utcnow().isoformat()
+                }).eq("user_id", user_id).execute()
+            else:
+                # Insert new
+                supabase.table("user_generation_preferences").insert({
+                    "user_id": user_id,
+                    "preferred_tone": preferred_tone,
+                    "preferred_keywords": preferred_keywords or [],
+                    "preferred_audience": preferred_audience,
+                    "created_at": datetime.utcnow().isoformat()
+                }).execute()
+            
+            return True
+            
+        except Exception as e:
+            raise Exception(f"Failed to save user preferences: {str(e)}")
+    
+    async def get_user_preferences(
+        self,
+        user_id: str
+    ) -> Optional[Dict]:
+        """
+        Get user generation preferences
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            User preferences or None
+        """
+        supabase = get_supabase()
+        
+        try:
+            result = supabase.table("user_generation_preferences").select("*").eq("user_id", user_id).execute()
+            
+            if not result.data:
+                return None
+            
+            return result.data[0]
+            
+        except Exception as e:
+            raise Exception(f"Failed to get user preferences: {str(e)}")
+    
+    async def track_generation_history(
+        self,
+        user_id: str,
+        content_id: str,
+        action: str,
+        content_type: str,
+        quality_score: Optional[float] = None
+    ) -> bool:
+        """
+        Track generation activity in history
+        
+        Args:
+            user_id: User ID
+            content_id: Content ID
+            action: Action performed (generated, regenerated, edited, deleted)
+            content_type: Type of content
+            quality_score: Quality score
+            
+        Returns:
+            True if successful
+        """
+        supabase = get_supabase()
+        
+        try:
+            supabase.table("generation_history").insert({
+                "user_id": user_id,
+                "content_id": content_id,
+                "action": action,
+                "content_type": content_type,
+                "quality_score": quality_score,
+                "timestamp": datetime.utcnow().isoformat()
+            }).execute()
+            
+            return True
+            
+        except Exception as e:
+            raise Exception(f"Failed to track generation history: {str(e)}")
+    
+    async def update_stats_cache(
+        self,
+        user_id: str,
+        total_generations: int,
+        by_type: Dict,
+        avg_quality_score: float,
+        most_used_keywords: List[str],
+        most_used_tones: List[str],
+        generation_trends: Dict
+    ) -> bool:
+        """
+        Update generation statistics cache
+        
+        Args:
+            user_id: User ID
+            total_generations: Total generation count
+            by_type: Count by content type
+            avg_quality_score: Average quality score
+            most_used_keywords: Most used keywords
+            most_used_tones: Most used tones
+            generation_trends: Generation trends by date
+            
+        Returns:
+            True if successful
+        """
+        supabase = get_supabase()
+        
+        try:
+            # Check if cache exists
+            existing = supabase.table("generation_stats_cache").select("id").eq("user_id", user_id).execute()
+            
+            cache_data = {
+                "total_generations": total_generations,
+                "by_type": by_type,
+                "avg_quality_score": avg_quality_score,
+                "most_used_keywords": most_used_keywords,
+                "most_used_tones": most_used_tones,
+                "generation_trends": generation_trends,
+                "cached_at": datetime.utcnow().isoformat(),
+                "expires_at": (datetime.utcnow() + timedelta(hours=24)).isoformat()
+            }
+            
+            if existing.data:
+                # Update existing
+                supabase.table("generation_stats_cache").update(cache_data).eq("user_id", user_id).execute()
+            else:
+                # Insert new
+                cache_data["user_id"] = user_id
+                supabase.table("generation_stats_cache").insert(cache_data).execute()
+            
+            return True
+            
+        except Exception as e:
+            raise Exception(f"Failed to update stats cache: {str(e)}")
 
 
 # Create singleton instance
