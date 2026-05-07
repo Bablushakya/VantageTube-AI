@@ -25,7 +25,7 @@ class ContentService:
         
         Args:
             user_id: User ID
-            content_type: Type of content (title, description, tags, thumbnail_text)
+            content_type: Type of content (title, description, tags, thumbnail)
             content: Generated content data
             video_id: Associated video ID (optional)
             prompt_used: Prompt used for generation (optional)
@@ -37,13 +37,14 @@ class ContentService:
         
         try:
             # Insert into generated_content table
+            # Note: Database column is 'generated_data', not 'content'
             result = supabase.table("generated_content").insert({
                 "user_id": user_id,
                 "video_id": video_id,
                 "content_type": content_type,
-                "content": content,
-                "prompt_used": prompt_used,
-                "created_at": datetime.utcnow().isoformat()
+                "generated_data": content,  # Use 'generated_data' instead of 'content'
+                "model_used": "nano-thumbnail-v1-mock",  # Add model_used field
+                "input_data": {"prompt": prompt_used} if prompt_used else None  # Store prompt in input_data
             }).execute()
             
             if not result.data:
@@ -56,14 +57,31 @@ class ContentService:
                 user_id=saved_content["user_id"],
                 video_id=saved_content.get("video_id"),
                 content_type=saved_content["content_type"],
-                content=saved_content["content"],
-                prompt_used=saved_content.get("prompt_used"),
+                content=saved_content["generated_data"],  # Read from 'generated_data'
+                prompt_used=prompt_used,
                 created_at=datetime.fromisoformat(saved_content["created_at"].replace("Z", "+00:00"))
             )
             
         except Exception as e:
             raise Exception(f"Failed to save generated content: {str(e)}")
     
+    async def get_content_history(
+        self,
+        user_id: str,
+        content_type: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0
+    ) -> ContentHistoryResponse:
+        """
+        Get user's content generation history.
+        Alias kept for API compatibility; delegates to the full implementation.
+        """
+        return await self.get_user_content_history(
+            user_id=user_id,
+            content_type=content_type,
+            limit=limit
+        )
+
     async def get_user_content_history(
         self,
         user_id: str,
@@ -104,8 +122,8 @@ class ContentService:
                     user_id=item["user_id"],
                     video_id=item.get("video_id"),
                     content_type=item["content_type"],
-                    content=item["content"],
-                    prompt_used=item.get("prompt_used"),
+                    content=item["generated_data"],  # Use 'generated_data' instead of 'content'
+                    prompt_used=item.get("input_data", {}).get("prompt") if item.get("input_data") else None,
                     created_at=datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
                 )
                 for item in result.data
@@ -149,8 +167,8 @@ class ContentService:
                 user_id=item["user_id"],
                 video_id=item.get("video_id"),
                 content_type=item["content_type"],
-                content=item["content"],
-                prompt_used=item.get("prompt_used"),
+                content=item["generated_data"],  # Use 'generated_data' instead of 'content'
+                prompt_used=item.get("input_data", {}).get("prompt") if item.get("input_data") else None,
                 created_at=datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
             )
             

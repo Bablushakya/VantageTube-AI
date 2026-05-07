@@ -40,6 +40,10 @@
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           AI Generator
         </a>
+        <a href="thumbnail.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+          Thumbnail Generator
+        </a>
         <a href="trending.html" class="nav-item">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
           Trending Ideas
@@ -127,7 +131,7 @@
                   </div>
                   <div class="settings-row-control">
                     <label class="toggle-switch">
-                      <input type="checkbox" id="darkModeToggle" checked onchange="markChanged()">
+                      <input type="checkbox" id="darkModeToggle" checked onchange="toggleDarkMode()">
                       <span class="toggle-track"></span>
                       <span class="toggle-thumb"></span>
                     </label>
@@ -186,7 +190,7 @@
                     <div class="settings-row-desc">Adjust text size for better readability</div>
                   </div>
                   <div class="settings-row-control">
-                    <select class="profile-input" style="width:auto;min-width:120px;" onchange="markChanged()">
+                    <select class="profile-input" style="width:auto;min-width:120px;" id="fontSizeSelect" onchange="selectFontSize(this.value)">
                       <option value="small">Small</option>
                       <option value="normal" selected>Normal</option>
                       <option value="large">Large</option>
@@ -201,7 +205,7 @@
                   </div>
                   <div class="settings-row-control">
                     <label class="toggle-switch">
-                      <input type="checkbox" onchange="markChanged()">
+                      <input type="checkbox" id="compactModeToggle" onchange="toggleCompactMode()">
                       <span class="toggle-track"></span>
                       <span class="toggle-thumb"></span>
                     </label>
@@ -225,7 +229,7 @@
                   </div>
                   <div class="settings-row-control">
                     <label class="toggle-switch">
-                      <input type="checkbox" checked onchange="markChanged()">
+                      <input type="checkbox" id="emailNotificationsToggle" checked onchange="toggleEmailNotifications()">
                       <span class="toggle-track"></span>
                       <span class="toggle-thumb"></span>
                     </label>
@@ -239,7 +243,7 @@
                   </div>
                   <div class="settings-row-control">
                     <label class="toggle-switch">
-                      <input type="checkbox" checked onchange="markChanged()">
+                      <input type="checkbox" id="weeklySeoToggle" checked onchange="toggleNotificationSetting('weekly_seo_report')">
                       <span class="toggle-track"></span>
                       <span class="toggle-thumb"></span>
                     </label>
@@ -253,7 +257,7 @@
                   </div>
                   <div class="settings-row-control">
                     <label class="toggle-switch">
-                      <input type="checkbox" checked onchange="markChanged()">
+                      <input type="checkbox" id="trendingAlertsToggle" checked onchange="toggleNotificationSetting('trending_alerts')">
                       <span class="toggle-track"></span>
                       <span class="toggle-thumb"></span>
                     </label>
@@ -267,7 +271,7 @@
                   </div>
                   <div class="settings-row-control">
                     <label class="toggle-switch">
-                      <input type="checkbox" onchange="markChanged()">
+                      <input type="checkbox" id="featureUpdatesToggle" onchange="toggleNotificationSetting('feature_updates')">
                       <span class="toggle-track"></span>
                       <span class="toggle-thumb"></span>
                     </label>
@@ -281,7 +285,7 @@
                   </div>
                   <div class="settings-row-control">
                     <label class="toggle-switch">
-                      <input type="checkbox" checked onchange="markChanged()">
+                      <input type="checkbox" id="milestoneAlertsToggle" checked onchange="toggleNotificationSetting('milestone_alerts')">
                       <span class="toggle-track"></span>
                       <span class="toggle-thumb"></span>
                     </label>
@@ -354,13 +358,14 @@
                 </div>
                 <div class="card-section-label">Integrations</div>
 
-                <div class="connected-app-row">
+                <div class="connected-app-row" id="youtubeAppRow">
                   <div class="app-icon-box" style="background:rgba(255,0,0,0.1);">📺</div>
                   <div class="app-info">
                     <div class="app-name">YouTube</div>
-                    <div class="app-status connected">✅ Connected · @techwithAlex</div>
+                    <div class="app-status" id="youtubeStatus">Not connected</div>
                   </div>
-                  <button class="btn btn-ghost btn-sm" onclick="showToast('Disconnect feature coming in Phase 2', 'info')">Disconnect</button>
+                  <button class="btn btn-ghost btn-sm" id="youtubeDisconnectBtn" onclick="disconnectApp('YouTube')" style="display:none;">Disconnect</button>
+                  <button class="btn btn-primary btn-sm" id="youtubeConnectBtn" onclick="connectApp('YouTube')" style="display:none;">Connect</button>
                 </div>
 
                 <div class="connected-app-row">
@@ -369,7 +374,7 @@
                     <div class="app-name">Google Analytics</div>
                     <div class="app-status">Not connected</div>
                   </div>
-                  <button class="btn btn-primary btn-sm" onclick="showToast('Connect feature coming in Phase 2', 'info')">Connect</button>
+                  <button class="btn btn-primary btn-sm" onclick="connectApp('Google Analytics')">Connect</button>
                 </div>
 
                 <div class="connected-app-row">
@@ -378,7 +383,7 @@
                     <div class="app-name">Twitter / X</div>
                     <div class="app-status">Not connected</div>
                   </div>
-                  <button class="btn btn-primary btn-sm" onclick="showToast('Connect feature coming in Phase 2', 'info')">Connect</button>
+                  <button class="btn btn-primary btn-sm" onclick="connectApp('Twitter')">Connect</button>
                 </div>
               </div>
             </div>
@@ -398,7 +403,7 @@
                   </div>
                   <div class="settings-row-control">
                     <label class="toggle-switch">
-                      <input type="checkbox" checked onchange="markChanged()">
+                      <input type="checkbox" id="profileVisibilityToggle" checked onchange="toggleProfileVisibility()">
                       <span class="toggle-track"></span>
                       <span class="toggle-thumb"></span>
                     </label>
@@ -412,7 +417,7 @@
                   </div>
                   <div class="settings-row-control">
                     <label class="toggle-switch">
-                      <input type="checkbox" checked onchange="markChanged()">
+                      <input type="checkbox" id="analyticsSharingToggle" checked onchange="toggleAnalyticsSharing()">
                       <span class="toggle-track"></span>
                       <span class="toggle-thumb"></span>
                     </label>
@@ -462,6 +467,7 @@
     </div>
   </div>
 
+  <script src="../js/cookie-manager.js"></script>
   <script src="../js/main.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/auth.js"></script>

@@ -1,566 +1,458 @@
+
 """
-AI Content Generation Service
-Handles OpenAI API integration for content generation
+VantageTube AI - AI Service
+Handles AI-powered content generation with quota management,
+per-user serialisation, caching, and exponential-backoff retry.
 """
 
-import openai
+import json
+import asyncio
+import time
+import logging
+import hashlib
 from typing import List, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
+
+import google.generativeai as genai
+
 from app.core.config import settings
-from app.models.content import (
-    GeneratedTitle, GeneratedTitles, GeneratedDescription,
-    GeneratedTags, ThumbnailTextSuggestion, GeneratedThumbnailText
-)
+from app.core.supabase import get_supabase
+from app.services.ai_quota_manager import quota_manager, retry_strategy
+
+logger = logging.getLogger(__name__)
 
 
 class AIService:
-    """Service for AI-powered content generation using OpenAI"""
-    
+    """
+    Single, canonical AI service.
+
+    Key design decisions:
+    - Per-user asyncio.Semaphore(1): only one Gemini call per user at a time,
+      regardless of how many browser tabs or concurrent requests exist.
+    - Server-side 2-second inter-call delay: enforced inside every
+      _generate_*_internal() method via _enforce_rate_limit().
+    - 24-hour Supabase cache: identical prompts return instantly without
+      consuming any Gemini quota.
+    - Quota tracking delegated entirely to QuotaManager (no duplicate checks).
+    """
+
+    _CACHE_TTL_SECONDS = 86_400   # 24 hours
+    _MIN_CALL_INTERVAL = 2.0      # seconds between consecutive Gemini calls
+
     def __init__(self):
-        """Initialize OpenAI client"""
-        if not settings.OPENAI_API_KEY:
-            raise ValueError("OPENAI_API_KEY not configured in environment variables")
-        openai.api_key = settings.OPENAI_API_KEY
-    
+        self.supabase = get_supabase()
+        self._last_call: float = 0.0          # monotonic timestamp of last Gemini call
+        self._user_semaphores: Dict[str, asyncio.Semaphore] = {}  # per-user lock
+
+        # ── Gemini ────────────────────────────────────────────────────────────
+        self.gemini_model = None
+        self.gemini_model_name = "unknown"
+        if settings.GEMINI_API_KEY:
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            self.gemini_model, self.gemini_model_name = self._init_gemini_model()
+
+        # ── OpenAI (optional fallback) ────────────────────────────────────────
+        self.openai_client = None
+        if settings.OPENAI_API_KEY:
+            try:
+                from openai import AsyncOpenAI
+                self.openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+                logger.info("OpenAI fallback client initialised")
+            except Exception as exc:
+                logger.warning(f"OpenAI init failed (fallback unavailable): {exc}")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # INITIALISATION HELPERS
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _init_gemini_model(self):
+        """Try models in preference order; return (model, name) or (None, 'none')."""
+        for name in ("gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro"):
+            try:
+                model = genai.GenerativeModel(name)
+                logger.info(f"Gemini model initialised: {name}")
+                return model, name
+            except Exception as exc:
+                logger.warning(f"Could not init {name}: {exc}")
+        logger.error("No Gemini model could be initialised")
+        return None, "none"
+
+    def _get_user_semaphore(self, user_id: str) -> asyncio.Semaphore:
+        """
+        Return (creating if needed) a per-user Semaphore(1).
+        This serialises all Gemini calls for a single user so that
+        even if the frontend fires two requests simultaneously, they
+        queue rather than race.
+        """
+        if user_id not in self._user_semaphores:
+            self._user_semaphores[user_id] = asyncio.Semaphore(1)
+        return self._user_semaphores[user_id]
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # RATE LIMITING
+    # ─────────────────────────────────────────────────────────────────────────
+
+    async def _enforce_rate_limit(self):
+        """
+        Ensure at least _MIN_CALL_INTERVAL seconds between consecutive
+        Gemini API calls (global, not per-user — the API limit is global).
+        """
+        elapsed = time.monotonic() - self._last_call
+        if elapsed < self._MIN_CALL_INTERVAL:
+            wait = self._MIN_CALL_INTERVAL - elapsed
+            logger.debug(f"Rate-limit pause: {wait:.2f}s")
+            await asyncio.sleep(wait)
+        self._last_call = time.monotonic()
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # CACHE HELPERS
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _hash_prompt(self, **kwargs) -> str:
+        """Deterministic SHA-256 hash of prompt parameters."""
+        return hashlib.sha256(
+            json.dumps(kwargs, sort_keys=True).encode()
+        ).hexdigest()
+
+    async def _get_cached(self, user_id: str, content_type: str, prompt_hash: str) -> Optional[Dict]:
+        """Return cached result dict if it exists and is still fresh, else None."""
+        try:
+            resp = (
+                self.supabase.table("ai_cache")
+                .select("result, created_at")
+                .eq("user_id", user_id)
+                .eq("content_type", content_type)
+                .eq("prompt_hash", prompt_hash)
+                .execute()
+            )
+            if resp.data:
+                entry = resp.data[0]
+                # Handle both timezone-aware and naive ISO strings
+                created_raw = entry["created_at"].replace("Z", "+00:00")
+                created_at = datetime.fromisoformat(created_raw)
+                # Compare as naive UTC
+                age = datetime.utcnow() - created_at.replace(tzinfo=None)
+                if age < timedelta(seconds=self._CACHE_TTL_SECONDS):
+                    logger.info(f"Cache HIT  [{content_type}] user={user_id[:8]}…")
+                    return json.loads(entry["result"])
+                # Expired — delete silently
+                self.supabase.table("ai_cache").delete().eq("user_id", user_id).eq(
+                    "content_type", content_type
+                ).eq("prompt_hash", prompt_hash).execute()
+        except Exception as exc:
+            logger.warning(f"Cache read error: {exc}")
+        return None
+
+    async def _set_cached(self, user_id: str, content_type: str, prompt_hash: str, result: Dict):
+        """Write result to cache; silently ignore errors."""
+        try:
+            self.supabase.table("ai_cache").upsert(
+                {
+                    "user_id": user_id,
+                    "content_type": content_type,
+                    "prompt_hash": prompt_hash,
+                    "result": json.dumps(result),
+                    "created_at": datetime.utcnow().isoformat(),
+                },
+                on_conflict="user_id,content_type,prompt_hash",
+            ).execute()
+            logger.debug(f"Cache WRITE [{content_type}] user={user_id[:8]}…")
+        except Exception as exc:
+            logger.warning(f"Cache write error: {exc}")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # JSON EXTRACTION HELPER
+    # ─────────────────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _extract_json(text: str, array: bool = False) -> Dict | list:
+        """
+        Extract the first JSON object or array from a Gemini response string.
+        Raises ValueError if nothing parseable is found.
+        """
+        open_ch, close_ch = ("[", "]") if array else ("{", "}")
+        start = text.find(open_ch)
+        end = text.rfind(close_ch) + 1
+        if start == -1 or end <= start:
+            raise ValueError(f"No JSON {'array' if array else 'object'} found in response")
+        return json.loads(text[start:end])
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # PUBLIC API — TITLES
+    # ─────────────────────────────────────────────────────────────────────────
+
     async def generate_titles(
         self,
+        user_id: str,
         topic: str,
-        keywords: List[str],
-        tone: str = "professional",
-        target_audience: Optional[str] = None,
-        count: int = 5
-    ) -> GeneratedTitles:
-        """
-        Generate optimized video titles using AI
-        
-        Args:
-            topic: Video topic/subject
-            keywords: Target keywords for SEO
-            tone: Content tone (professional, casual, enthusiastic, educational)
-            target_audience: Target audience description
-            count: Number of titles to generate
-            
-        Returns:
-            GeneratedTitles with multiple title options
-        """
-        # Build prompt
-        prompt = self._build_title_prompt(topic, keywords, tone, target_audience, count)
-        
-        try:
-            # Call OpenAI API
-            response = await openai.ChatCompletion.acreate(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert YouTube SEO specialist who creates high-performing video titles."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0.8,
-                max_tokens=1000
-            )
-            
-            # Parse response
-            content = response.choices[0].message.content
-            titles = self._parse_titles_response(content)
-            
-            return GeneratedTitles(
-                titles=titles,
-                topic=topic,
-                keywords=keywords,
-                generated_at=datetime.utcnow()
-            )
-            
-        except Exception as e:
-            raise Exception(f"Failed to generate titles: {str(e)}")
-    
-    async def generate_description(
-        self,
-        topic: str,
-        title: Optional[str] = None,
         keywords: List[str] = None,
-        tone: str = "professional",
+        tone: str = "engaging",
         target_audience: Optional[str] = None,
-        video_length: Optional[str] = None,
-        include_timestamps: bool = True,
-        include_links: bool = True,
-        include_cta: bool = True
-    ) -> GeneratedDescription:
+        count: int = 5,
+        use_cache: bool = True,
+    ) -> Dict:
         """
-        Generate optimized video description using AI
-        
-        Args:
-            topic: Video topic/subject
-            title: Video title for context
-            keywords: Target keywords for SEO
-            tone: Content tone
-            target_audience: Target audience description
-            video_length: Video length (short, medium, long)
-            include_timestamps: Include timestamp placeholders
-            include_links: Include link placeholders
-            include_cta: Include call-to-action
-            
-        Returns:
-            GeneratedDescription with optimized description
+        Generate optimised YouTube titles.
+        Returns a plain dict:
+          {"titles": [{"title": ..., "seo_score": ..., "reasoning": ...}], ...}
         """
-        # Build prompt
-        prompt = self._build_description_prompt(
-            topic, title, keywords, tone, target_audience, video_length,
-            include_timestamps, include_links, include_cta
+        prompt_hash = self._hash_prompt(
+            topic=topic, keywords=keywords, tone=tone,
+            target_audience=target_audience, count=count
         )
-        
-        try:
-            # Call OpenAI API
-            response = await openai.ChatCompletion.acreate(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert YouTube SEO specialist who creates engaging, SEO-optimized video descriptions."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0.7,
-                max_tokens=1500
+
+        if use_cache:
+            cached = await self._get_cached(user_id, "title", prompt_hash)
+            if cached:
+                return cached
+
+        async with self._get_user_semaphore(user_id):
+            result = await retry_strategy.execute_with_retry(
+                self._titles_internal,
+                topic, keywords, tone, target_audience, count,
+                retryable_exceptions=(Exception,),
             )
-            
-            # Parse response
-            content = response.choices[0].message.content
-            description_data = self._parse_description_response(content)
-            
-            return GeneratedDescription(
-                description=description_data["description"],
-                word_count=len(description_data["description"].split()),
-                includes_timestamps=include_timestamps and "[00:00]" in description_data["description"],
-                includes_links=include_links and "http" in description_data["description"],
-                includes_cta=include_cta,
-                seo_tips=description_data.get("seo_tips", []),
-                generated_at=datetime.utcnow()
-            )
-            
-        except Exception as e:
-            raise Exception(f"Failed to generate description: {str(e)}")
-    
-    async def generate_tags(
-        self,
-        topic: str,
-        title: Optional[str] = None,
-        keywords: List[str] = None,
-        count: int = 15
-    ) -> GeneratedTags:
-        """
-        Generate optimized video tags using AI
-        
-        Args:
-            topic: Video topic/subject
-            title: Video title for context
-            keywords: Target keywords
-            count: Number of tags to generate
-            
-        Returns:
-            GeneratedTags with categorized tags
-        """
-        # Build prompt
-        prompt = self._build_tags_prompt(topic, title, keywords, count)
-        
-        try:
-            # Call OpenAI API
-            response = await openai.ChatCompletion.acreate(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert YouTube SEO specialist who creates effective video tags for maximum discoverability."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0.6,
-                max_tokens=800
-            )
-            
-            # Parse response
-            content = response.choices[0].message.content
-            tags_data = self._parse_tags_response(content)
-            
-            return GeneratedTags(
-                tags=tags_data["tags"],
-                tag_count=len(tags_data["tags"]),
-                tag_categories=tags_data["categories"],
-                generated_at=datetime.utcnow()
-            )
-            
-        except Exception as e:
-            raise Exception(f"Failed to generate tags: {str(e)}")
-    
-    async def generate_thumbnail_text(
-        self,
-        topic: str,
-        title: Optional[str] = None,
-        count: int = 5
-    ) -> GeneratedThumbnailText:
-        """
-        Generate thumbnail text suggestions using AI
-        
-        Args:
-            topic: Video topic/subject
-            title: Video title for context
-            count: Number of suggestions
-            
-        Returns:
-            GeneratedThumbnailText with text suggestions and design tips
-        """
-        # Build prompt
-        prompt = self._build_thumbnail_prompt(topic, title, count)
-        
-        try:
-            # Call OpenAI API
-            response = await openai.ChatCompletion.acreate(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert YouTube thumbnail designer who creates compelling thumbnail text that drives clicks."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=0.8,
-                max_tokens=1000
-            )
-            
-            # Parse response
-            content = response.choices[0].message.content
-            thumbnail_data = self._parse_thumbnail_response(content)
-            
-            return GeneratedThumbnailText(
-                suggestions=thumbnail_data["suggestions"],
-                design_tips=thumbnail_data["design_tips"],
-                generated_at=datetime.utcnow()
-            )
-            
-        except Exception as e:
-            raise Exception(f"Failed to generate thumbnail text: {str(e)}")
-    
-    # ==================== Prompt Builders ====================
-    
-    def _build_title_prompt(
+
+        await self._set_cached(user_id, "title", prompt_hash, result)
+        quota_manager.record_request(user_id, tokens_used=2000)
+        return result
+
+    async def _titles_internal(
         self,
         topic: str,
         keywords: List[str],
         tone: str,
-        target_audience: Optional[str],
-        count: int
-    ) -> str:
-        """Build prompt for title generation"""
-        keywords_str = ", ".join(keywords) if keywords else "N/A"
-        audience_str = f" targeting {target_audience}" if target_audience else ""
-        
-        return f"""Generate {count} highly optimized YouTube video titles for the following:
+        target_audience: str,
+        count: int,
+    ) -> Dict:
+        if not self.gemini_model:
+            raise RuntimeError("Gemini model not initialised — check GEMINI_API_KEY")
+
+        await self._enforce_rate_limit()
+
+        kw = ", ".join(keywords) if keywords else "none"
+        prompt = f"""Generate {count} optimised YouTube video titles.
 
 Topic: {topic}
-Keywords: {keywords_str}
+Keywords: {kw}
 Tone: {tone}
-Target Audience: {target_audience or "General"}{audience_str}
+Target Audience: {target_audience or 'General'}
 
-Requirements:
-- Length: 40-70 characters (optimal for YouTube)
-- Include power words (How to, Best, Ultimate, Complete, Guide, etc.)
-- Include numbers when relevant
-- Front-load important keywords
-- Use proper capitalization
-- Make it click-worthy but not clickbait
-- Each title should be unique and compelling
+Rules:
+- 50-60 characters each
+- Include primary keyword naturally
+- Compelling but not clickbait
+- Include SEO score 0-100 and one-line reasoning
 
-For each title, provide:
-1. The title text
-2. SEO score estimate (0-100)
-3. Brief reasoning why it works
+Return ONLY a JSON array, no markdown:
+[{{"title": "...", "seo_score": 85, "reasoning": "..."}}]"""
 
-Format your response as:
-TITLE 1: [title text]
-SCORE: [0-100]
-REASONING: [why it works]
+        response = await asyncio.to_thread(self.gemini_model.generate_content, prompt)
+        titles_data = self._extract_json(response.text, array=True)
 
-TITLE 2: [title text]
-SCORE: [0-100]
-REASONING: [why it works]
+        return {
+            "titles": titles_data,
+            "count": len(titles_data),
+            "model": self.gemini_model_name,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
 
-... and so on."""
-    
-    def _build_description_prompt(
+    # ─────────────────────────────────────────────────────────────────────────
+    # PUBLIC API — DESCRIPTION
+    # ─────────────────────────────────────────────────────────────────────────
+
+    async def generate_description(
+        self,
+        user_id: str,
+        topic: str,
+        title: str = None,
+        keywords: List[str] = None,
+        tone: str = "engaging",
+        target_audience: str = None,
+        video_length: str = "medium",
+        include_timestamps: bool = True,
+        include_links: bool = True,
+        include_cta: bool = True,
+        use_cache: bool = True,
+    ) -> Dict:
+        """
+        Generate an optimised YouTube description.
+        Returns a plain dict:
+          {"description": "...", "seo_tips": [...]}
+        """
+        prompt_hash = self._hash_prompt(
+            topic=topic, title=title, keywords=keywords, tone=tone,
+            target_audience=target_audience, video_length=video_length,
+            include_timestamps=include_timestamps, include_cta=include_cta,
+        )
+
+        if use_cache:
+            cached = await self._get_cached(user_id, "description", prompt_hash)
+            if cached:
+                return cached
+
+        async with self._get_user_semaphore(user_id):
+            result = await retry_strategy.execute_with_retry(
+                self._description_internal,
+                topic, title, keywords, tone, target_audience,
+                video_length, include_timestamps, include_links, include_cta,
+                retryable_exceptions=(Exception,),
+            )
+
+        await self._set_cached(user_id, "description", prompt_hash, result)
+        quota_manager.record_request(user_id, tokens_used=3000)
+        return result
+
+    async def _description_internal(
         self,
         topic: str,
-        title: Optional[str],
+        title: str,
         keywords: List[str],
         tone: str,
-        target_audience: Optional[str],
-        video_length: Optional[str],
+        target_audience: str,
+        video_length: str,
         include_timestamps: bool,
         include_links: bool,
-        include_cta: bool
-    ) -> str:
-        """Build prompt for description generation"""
-        keywords_str = ", ".join(keywords) if keywords else "N/A"
-        title_str = f"\nTitle: {title}" if title else ""
-        
-        return f"""Generate an optimized YouTube video description for:
+        include_cta: bool,
+    ) -> Dict:
+        if not self.gemini_model:
+            raise RuntimeError("Gemini model not initialised — check GEMINI_API_KEY")
 
-Topic: {topic}{title_str}
-Keywords: {keywords_str}
+        await self._enforce_rate_limit()
+
+        kw = ", ".join(keywords) if keywords else "none"
+        extras = []
+        if include_timestamps:
+            extras.append("timestamp placeholders (e.g. 0:00 Intro)")
+        if include_links:
+            extras.append("link placeholders")
+        if include_cta:
+            extras.append("subscribe/like call-to-action")
+        extras_str = ", ".join(extras) or "basic structure"
+
+        prompt = f"""Generate an optimised YouTube video description.
+
+Topic: {topic}
+Title: {title or 'Not provided'}
+Keywords: {kw}
 Tone: {tone}
-Target Audience: {target_audience or "General"}
-Video Length: {video_length or "Medium"}
+Target Audience: {target_audience or 'General'}
+Video Length: {video_length}
+Include: {extras_str}
 
-Requirements:
-- Length: 200-300 words minimum
-- First 2-3 sentences are crucial (appear above "Show More")
-- Include keywords naturally (don't stuff)
-- {"Include timestamp placeholders (e.g., 00:00 Intro, 02:15 Main Topic)" if include_timestamps else "No timestamps needed"}
-- {"Include 3-5 relevant link placeholders (resources, social media, etc.)" if include_links else "No links needed"}
-- {"Include a strong call-to-action (subscribe, like, comment)" if include_cta else "No CTA needed"}
-- Use line breaks for readability
-- Add relevant hashtags at the end (3-5 hashtags)
+Rules:
+- First line: compelling hook (50-100 chars)
+- Weave in keywords naturally
+- Scannable with line breaks
+- 3-5 actionable SEO tips at the end
 
-Also provide 3-5 SEO tips specific to this description.
+Return ONLY a JSON object, no markdown:
+{{"description": "...", "seo_tips": ["tip1", "tip2"]}}"""
 
-Format your response as:
-DESCRIPTION:
-[description text here]
+        response = await asyncio.to_thread(self.gemini_model.generate_content, prompt)
+        data = self._extract_json(response.text, array=False)
 
-SEO_TIPS:
-- [tip 1]
-- [tip 2]
-- [tip 3]"""
-    
-    def _build_tags_prompt(
+        return {
+            "description": data.get("description", ""),
+            "seo_tips": data.get("seo_tips") or [],
+            "model": self.gemini_model_name,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # PUBLIC API — TAGS
+    # ─────────────────────────────────────────────────────────────────────────
+
+    async def generate_tags(
+        self,
+        user_id: str,
+        topic: str,
+        title: str = None,
+        keywords: List[str] = None,
+        count: int = 20,
+        use_cache: bool = True,
+    ) -> Dict:
+        """
+        Generate optimised YouTube tags.
+        Returns a plain dict:
+          {"all_tags": [...], "primary_tags": [...], ...}
+        """
+        prompt_hash = self._hash_prompt(
+            topic=topic, title=title, keywords=keywords, count=count
+        )
+
+        if use_cache:
+            cached = await self._get_cached(user_id, "tags", prompt_hash)
+            if cached:
+                return cached
+
+        async with self._get_user_semaphore(user_id):
+            result = await retry_strategy.execute_with_retry(
+                self._tags_internal,
+                topic, title, keywords, count,
+                retryable_exceptions=(Exception,),
+            )
+
+        await self._set_cached(user_id, "tags", prompt_hash, result)
+        quota_manager.record_request(user_id, tokens_used=1500)
+        return result
+
+    async def _tags_internal(
         self,
         topic: str,
-        title: Optional[str],
+        title: str,
         keywords: List[str],
-        count: int
-    ) -> str:
-        """Build prompt for tags generation"""
-        keywords_str = ", ".join(keywords) if keywords else "N/A"
-        title_str = f"\nTitle: {title}" if title else ""
-        
-        return f"""Generate {count} optimized YouTube video tags for:
+        count: int,
+    ) -> Dict:
+        if not self.gemini_model:
+            raise RuntimeError("Gemini model not initialised — check GEMINI_API_KEY")
 
-Topic: {topic}{title_str}
-Keywords: {keywords_str}
+        await self._enforce_rate_limit()
 
-Requirements:
-- Mix of broad and specific tags
-- Include exact keywords from title
-- Include related/synonym keywords
-- Include long-tail keywords (2-3 word phrases)
-- No duplicate tags
-- Relevant to the video content
-- Help with discoverability
+        kw = ", ".join(keywords) if keywords else "none"
+        prompt = f"""Generate {count} optimised YouTube tags.
 
-Categorize tags into:
-1. Primary (exact topic/keywords)
-2. Secondary (related topics)
-3. Long-tail (specific phrases)
-4. Broad (general category)
+Topic: {topic}
+Title: {title or 'Not provided'}
+Keywords: {kw}
 
-Format your response as:
-PRIMARY:
-- [tag 1]
-- [tag 2]
+Categorise into:
+- primary_tags (3-5): core topic tags
+- secondary_tags (5-7): related topic tags
+- long_tail_tags (5-7): specific phrase tags
+- broad_tags (3-5): general category tags
 
-SECONDARY:
-- [tag 3]
-- [tag 4]
+Rules:
+- 1-3 words each
+- No duplicates
+- Maximise searchability
 
-LONG_TAIL:
-- [tag 5]
-- [tag 6]
+Return ONLY a JSON object, no markdown:
+{{"primary_tags": [], "secondary_tags": [], "long_tail_tags": [], "broad_tags": [], "all_tags": []}}"""
 
-BROAD:
-- [tag 7]
-- [tag 8]"""
-    
-    def _build_thumbnail_prompt(
-        self,
-        topic: str,
-        title: Optional[str],
-        count: int
-    ) -> str:
-        """Build prompt for thumbnail text generation"""
-        title_str = f"\nTitle: {title}" if title else ""
-        
-        return f"""Generate {count} compelling thumbnail text suggestions for:
+        response = await asyncio.to_thread(self.gemini_model.generate_content, prompt)
+        data = self._extract_json(response.text, array=False)
 
-Topic: {topic}{title_str}
-
-Requirements:
-- Short and punchy (2-6 words max)
-- Large, readable text
-- Creates curiosity or urgency
-- Complements the title (doesn't repeat it exactly)
-- Various styles: bold statement, question, number, minimal
-
-For each suggestion, provide:
-1. The text
-2. Suggested style (bold, minimal, question, number)
-3. Brief reasoning
-
-Also provide 5 general thumbnail design tips.
-
-Format your response as:
-SUGGESTION 1:
-TEXT: [text]
-STYLE: [style]
-REASONING: [why it works]
-
-SUGGESTION 2:
-TEXT: [text]
-STYLE: [style]
-REASONING: [why it works]
-
-... and so on.
-
-DESIGN_TIPS:
-- [tip 1]
-- [tip 2]
-- [tip 3]
-- [tip 4]
-- [tip 5]"""
-    
-    # ==================== Response Parsers ====================
-    
-    def _parse_titles_response(self, content: str) -> List[GeneratedTitle]:
-        """Parse AI response for titles"""
-        titles = []
-        lines = content.strip().split("\n")
-        
-        current_title = {}
-        for line in lines:
-            line = line.strip()
-            if line.startswith("TITLE"):
-                if current_title:
-                    titles.append(GeneratedTitle(**current_title))
-                current_title = {"text": line.split(":", 1)[1].strip()}
-            elif line.startswith("SCORE"):
-                try:
-                    current_title["score"] = int(line.split(":", 1)[1].strip())
-                except:
-                    current_title["score"] = 75
-            elif line.startswith("REASONING"):
-                current_title["reasoning"] = line.split(":", 1)[1].strip()
-        
-        if current_title:
-            titles.append(GeneratedTitle(**current_title))
-        
-        return titles
-    
-    def _parse_description_response(self, content: str) -> Dict:
-        """Parse AI response for description"""
-        parts = content.split("SEO_TIPS:")
-        description = parts[0].replace("DESCRIPTION:", "").strip()
-        
-        seo_tips = []
-        if len(parts) > 1:
-            tips_text = parts[1].strip()
-            seo_tips = [
-                line.strip("- ").strip()
-                for line in tips_text.split("\n")
-                if line.strip().startswith("-")
-            ]
-        
+        all_tags = data.get("all_tags") or []
         return {
-            "description": description,
-            "seo_tips": seo_tips
-        }
-    
-    def _parse_tags_response(self, content: str) -> Dict:
-        """Parse AI response for tags"""
-        tags = []
-        categories = {
-            "primary": [],
-            "secondary": [],
-            "long_tail": [],
-            "broad": []
-        }
-        
-        current_category = None
-        lines = content.strip().split("\n")
-        
-        for line in lines:
-            line = line.strip()
-            if line.startswith("PRIMARY:"):
-                current_category = "primary"
-            elif line.startswith("SECONDARY:"):
-                current_category = "secondary"
-            elif line.startswith("LONG_TAIL:"):
-                current_category = "long_tail"
-            elif line.startswith("BROAD:"):
-                current_category = "broad"
-            elif line.startswith("-") and current_category:
-                tag = line.strip("- ").strip()
-                if tag:
-                    tags.append(tag)
-                    categories[current_category].append(tag)
-        
-        return {
-            "tags": tags,
-            "categories": categories
-        }
-    
-    def _parse_thumbnail_response(self, content: str) -> Dict:
-        """Parse AI response for thumbnail text"""
-        suggestions = []
-        design_tips = []
-        
-        parts = content.split("DESIGN_TIPS:")
-        suggestions_text = parts[0]
-        
-        # Parse suggestions
-        lines = suggestions_text.strip().split("\n")
-        current_suggestion = {}
-        
-        for line in lines:
-            line = line.strip()
-            if line.startswith("SUGGESTION"):
-                if current_suggestion:
-                    suggestions.append(ThumbnailTextSuggestion(**current_suggestion))
-                current_suggestion = {}
-            elif line.startswith("TEXT:"):
-                current_suggestion["text"] = line.split(":", 1)[1].strip()
-            elif line.startswith("STYLE:"):
-                current_suggestion["style"] = line.split(":", 1)[1].strip()
-            elif line.startswith("REASONING:"):
-                current_suggestion["reasoning"] = line.split(":", 1)[1].strip()
-        
-        if current_suggestion:
-            suggestions.append(ThumbnailTextSuggestion(**current_suggestion))
-        
-        # Parse design tips
-        if len(parts) > 1:
-            tips_text = parts[1].strip()
-            design_tips = [
-                line.strip("- ").strip()
-                for line in tips_text.split("\n")
-                if line.strip().startswith("-")
-            ]
-        
-        return {
-            "suggestions": suggestions,
-            "design_tips": design_tips
+            "primary_tags":   data.get("primary_tags")   or [],
+            "secondary_tags": data.get("secondary_tags") or [],
+            "long_tail_tags": data.get("long_tail_tags") or [],
+            "broad_tags":     data.get("broad_tags")     or [],
+            "all_tags":       all_tags,
+            "count":          len(all_tags),
+            "model":          self.gemini_model_name,
+            "generated_at":   datetime.utcnow().isoformat(),
         }
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # QUOTA INFO
+    # ─────────────────────────────────────────────────────────────────────────
 
-# Create singleton instance
+    def get_quota_info(self, user_id: str) -> Dict:
+        """Delegate to QuotaManager."""
+        return quota_manager.get_quota_info(user_id)
+
+
+# ── Singleton ─────────────────────────────────────────────────────────────────
 ai_service = AIService()

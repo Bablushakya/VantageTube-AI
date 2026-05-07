@@ -38,6 +38,10 @@
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           AI Generator
         </a>
+        <a href="thumbnail.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+          Thumbnail Generator
+        </a>
         <a href="trending.html" class="nav-item">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
           Trending Ideas
@@ -53,6 +57,8 @@
         </a>
       </nav>
       <div class="sidebar-footer">
+        <!-- 6.1: Quota bar — populated by _loadQuotaBar() on page load -->
+        <div id="quotaBarContainer"></div>
         <div class="sidebar-user">
           <div class="avatar">TA</div>
           <div class="user-info">
@@ -90,7 +96,7 @@
             <div class="card">
               <div class="card-header">
                 <span class="card-title">Select Video</span>
-                <span style="font-size:0.75rem;color:var(--text-muted);">87 videos</span>
+                <span class="video-selector-count" style="font-size:0.75rem;color:var(--text-muted);">Loading…</span>
               </div>
               <div class="video-selector-list" id="videoSelectorList">
                 <!-- Populated by JS -->
@@ -100,7 +106,11 @@
 
           <!-- RIGHT: Analysis Results -->
           <div id="analysisPanel">
-            <!-- Populated by JS -->
+            <div class="card" style="text-align:center;padding:var(--space-3xl);color:var(--text-muted);">
+              <div style="font-size:3rem;margin-bottom:var(--space-md);">👈</div>
+              <div style="font-weight:600;margin-bottom:var(--space-sm);">Select a video</div>
+              <div style="font-size:0.85rem;">Click any video on the left to view its current content and generate AI SEO suggestions.</div>
+            </div>
           </div>
 
         </div>
@@ -109,6 +119,7 @@
     </div>
   </div>
 
+  <script src="../js/cookie-manager.js"></script>
   <script src="../js/main.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/auth.js"></script>

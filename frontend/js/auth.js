@@ -1,6 +1,7 @@
 /**
  * Authentication Service for VantageTube AI
  * Handles user authentication, registration, and session management
+ * Uses cookies for secure token storage
  */
 
 // ==================== Authentication State ====================
@@ -9,22 +10,26 @@
  * Check if user is authenticated
  */
 function isAuthenticated() {
-    const token = localStorage.getItem('auth_token');
+    const token = CookieManager.getCookie('auth_token');
     return token !== null && token !== '';
 }
 
 /**
- * Get current user data from localStorage
+ * Get current user data from cookies
  */
 function getCurrentUserData() {
-    const userData = localStorage.getItem('user_data');
+    const userData = CookieManager.getCookie('user_data');
     return userData ? JSON.parse(userData) : null;
 }
 
 /**
- * Save user data to localStorage
+ * Save user data to cookies and localStorage
  */
 function saveUserData(user) {
+    CookieManager.setCookie('user_data', JSON.stringify(user), {
+        maxAge: 30 * 60 * 60 // 30 hours
+    });
+    // Also save to localStorage for backward compatibility
     localStorage.setItem('user_data', JSON.stringify(user));
 }
 
@@ -32,8 +37,67 @@ function saveUserData(user) {
  * Clear all authentication data
  */
 function clearAuthData() {
+    CookieManager.deleteCookie('auth_token');
+    CookieManager.deleteCookie('user_data');
+    CookieManager.deleteCookie('token_expires_at');
+    // Also clear localStorage for backward compatibility
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
+}
+
+/**
+ * Check if token is expired
+ */
+function isTokenExpired() {
+    const expiresAt = CookieManager.getCookie('token_expires_at');
+    if (!expiresAt) return false;
+    
+    const now = new Date().getTime();
+    return now > parseInt(expiresAt);
+}
+
+/**
+ * Refresh token if needed
+ */
+async function refreshTokenIfNeeded() {
+    if (!isAuthenticated()) return false;
+    
+    // Check if token expires in next 5 minutes
+    const expiresAt = CookieManager.getCookie('token_expires_at');
+    if (!expiresAt) return false;
+    
+    const now = new Date().getTime();
+    const timeUntilExpiry = parseInt(expiresAt) - now;
+    
+    // If less than 5 minutes until expiry, refresh
+    if (timeUntilExpiry < 5 * 60 * 1000) {
+        try {
+            console.log('Refreshing token...');
+            const response = await api.refreshToken();
+            
+            // Save new token
+            api.setToken(response.access_token);
+            CookieManager.setCookie('auth_token', response.access_token, {
+                maxAge: 30 * 60 * 60
+            });
+            
+            // Update expiry time
+            const expiresIn = response.expires_in || 30 * 60; // 30 minutes default
+            const newExpiresAt = new Date().getTime() + (expiresIn * 1000);
+            CookieManager.setCookie('token_expires_at', newExpiresAt.toString(), {
+                maxAge: 30 * 60 * 60
+            });
+            
+            console.log('Token refreshed successfully');
+            return true;
+        } catch (error) {
+            console.error('Token refresh failed:', error);
+            clearAuthData();
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 // ==================== Protected Routes ====================
@@ -43,7 +107,7 @@ function clearAuthData() {
  * Call this at the top of protected pages
  */
 function requireAuth() {
-    if (!isAuthenticated()) {
+    if (!isAuthenticated() || isTokenExpired()) {
         // Save current page to redirect back after login
         localStorage.setItem('redirect_after_login', window.location.pathname);
         // Use absolute path from root
@@ -58,7 +122,7 @@ function requireAuth() {
  * Call this on login/register pages
  */
 function redirectIfAuthenticated() {
-    if (isAuthenticated()) {
+    if (isAuthenticated() && !isTokenExpired()) {
         const redirectTo = localStorage.getItem('redirect_after_login') || '/pages/dashboard.html';
         localStorage.removeItem('redirect_after_login');
         window.location.href = redirectTo;
@@ -78,15 +142,26 @@ async function register(email, password, firstName, lastName, displayName) {
         
         const response = await api.register(email, password, firstName, lastName, displayName);
         
-        // Save token and user data
+        // Save token to cookie
         api.setToken(response.access_token);
+        CookieManager.setCookie('auth_token', response.access_token, {
+            maxAge: 30 * 60 * 60
+        });
+        
+        // Save expiry time
+        const expiresIn = response.expires_in || 30 * 60;
+        const expiresAt = new Date().getTime() + (expiresIn * 1000);
+        CookieManager.setCookie('token_expires_at', expiresAt.toString(), {
+            maxAge: 30 * 60 * 60
+        });
+        
+        // Save user data to cookie
         saveUserData(response.user);
         
         // Show success message
         showSuccess('Account created successfully! Redirecting...');
         
         // Redirect to dashboard
-        // Use absolute path from root (works from any page)
         setTimeout(() => {
             window.location.href = '/pages/dashboard.html';
         }, 1000);
@@ -108,15 +183,27 @@ async function login(email, password) {
         
         const response = await api.login(email, password);
         console.log('Login response:', response);
-        // Save token and user data
+        
+        // Save token to cookie
         api.setToken(response.access_token);
+        CookieManager.setCookie('auth_token', response.access_token, {
+            maxAge: 30 * 60 * 60
+        });
+        
+        // Save expiry time
+        const expiresIn = response.expires_in || 30 * 60;
+        const expiresAt = new Date().getTime() + (expiresIn * 1000);
+        CookieManager.setCookie('token_expires_at', expiresAt.toString(), {
+            maxAge: 30 * 60 * 60
+        });
+        
+        // Save user data to cookie
         saveUserData(response.user);
         
         // Show success message
         showSuccess('Login successful! Redirecting...');
         
         // Redirect to dashboard or saved page
-        // Use absolute path from root (works from any page)
         setTimeout(() => {
             const redirectTo = localStorage.getItem('redirect_after_login') || '/pages/dashboard.html';
             localStorage.removeItem('redirect_after_login');
@@ -141,7 +228,7 @@ async function logout() {
     } catch (error) {
         console.error('Logout API error:', error);
     } finally {
-        // Clear local data regardless of API response
+        // Clear all auth data
         clearAuthData();
         
         // Redirect to landing page
@@ -154,13 +241,16 @@ async function logout() {
  */
 async function loadCurrentUser() {
     try {
+        // Refresh token if needed
+        await refreshTokenIfNeeded();
+        
         const user = await api.getCurrentUser();
         saveUserData(user);
         return user;
     } catch (error) {
         console.error('Failed to load user:', error);
         // If token is invalid, clear auth and redirect
-        if (error.message.includes('Authentication required')) {
+        if (error.message.includes('Authentication required') || error.status === 401) {
             clearAuthData();
             window.location.href = '/auth.html';
         }
@@ -355,9 +445,19 @@ function displayUserInfo() {
  * Initialize authentication on page load
  */
 function initAuth() {
+    // Check if token is expired
+    if (isTokenExpired()) {
+        clearAuthData();
+        window.location.href = '/auth.html';
+        return;
+    }
+    
     // Display user info if authenticated
     if (isAuthenticated()) {
         displayUserInfo();
+        
+        // Set up token refresh interval (every 5 minutes)
+        setInterval(refreshTokenIfNeeded, 5 * 60 * 1000);
     }
     
     // Add logout button handlers
@@ -384,6 +484,8 @@ if (typeof module !== 'undefined' && module.exports) {
         getCurrentUserData,
         saveUserData,
         clearAuthData,
+        isTokenExpired,
+        refreshTokenIfNeeded,
         requireAuth,
         redirectIfAuthenticated,
         register,
@@ -393,6 +495,8 @@ if (typeof module !== 'undefined' && module.exports) {
         showError,
         showSuccess,
         clearError,
-        displayUserInfo
+        displayUserInfo,
+        validateRegistrationForm,
+        validateLoginForm
     };
 }

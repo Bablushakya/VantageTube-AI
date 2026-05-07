@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thumbnail Generator – VantageTube AI</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <style>
+    .thumbnail-preview {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
+      padding: var(--space-lg);
+      margin-bottom: var(--space-md);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    }
+
+    .thumbnail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--space-lg);
+      margin-top: var(--space-lg);
+    }
+
+    .thumbnail-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .thumbnail-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+      transform: translateY(-4px);
+    }
+
+    .thumbnail-card-image {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: center;
+      padding: var(--space-md);
+    }
+
+    .thumbnail-card-body {
+      padding: var(--space-md);
+    }
+
+    .thumbnail-card-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-sm);
+    }
+
+    .thumbnail-card-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: var(--space-md);
+    }
+
+    .thumbnail-card-actions {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    .thumbnail-card-actions button {
+      flex: 1;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+    }
+
+    .style-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+
+    .style-option {
+      padding: var(--space-md);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--bg-surface);
+    }
+
+    .style-option:hover {
+      border-color: var(--primary);
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .style-option.active {
+      border-color: var(--primary);
+      background: rgba(102, 126, 234, 0.1);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .style-option-icon {
+      font-size: 1.5rem;
+      margin-bottom: var(--space-sm);
+    }
+
+    .style-option-label {
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .color-palette {
+      display: flex;
+      gap: var(--space-sm);
+      margin-top: var(--space-sm);
+    }
+
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.1);
+    }
+
+    .color-swatch.active {
+      border-color: var(--text-primary);
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-xl);
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .empty-state-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-sm);
+    }
+
+    .empty-state-text {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .error-card {
+      border-color: #ff6b6b !important;
+      background: rgba(255, 107, 107, 0.05) !important;
+    }
+
+    .error-card .thumbnail-card-image {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%) !important;
+    }
+
+    .input-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: var(--space-xs);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;" onclick="document.querySelector('.sidebar').classList.remove('open');this.style.display='none';"></div>
+
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🎬</div>
+        <span class="logo-text">Vantage<span>Tube</span> AI</span>
+      </div>
+      <nav class="sidebar-nav">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="channel.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor"/></svg>
+          Channel Overview
+        </a>
+        <span class="nav-section-label">Tools</span>
+        <a href="analyzer.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Video Analyzer
+        </a>
+        <a href="generator.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          AI Generator
+        </a>
+        <a href="thumbnail.html" class="nav-item active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+          Thumbnail Generator
+        </a>
+        <a href="trending.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Trending Ideas
+        </a>
+        <span class="nav-section-label">Account</span>
+        <a href="profile.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Profile
+        </a>
+        <a href="settings.html" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">TA</div>
+          <div class="user-info">
+            <div class="user-name">TechWithAlex</div>
+            <div class="user-plan">Free Plan</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').style.display='block';">☰</button>
+          <span class="topbar-title">Thumbnail Generator</span>
+        </div>
+        <div class="topbar-right">
+          <button class="topbar-icon-btn">🔔<span class="notif-dot"></span></button>
+          <a href="generator.html" class="btn btn-ghost btn-sm">✨ Generator</a>
+        </div>
+      </header>
+
+      <main class="page-content">
+
+        <div style="margin-bottom:var(--space-lg);">
+          <h2 class="section-title">AI Thumbnail Generator</h2>
+          <p class="section-subtitle" style="margin-bottom:0;">Enter your video topic. The system will automatically build a professional thumbnail design with the right composition, colors, and visual elements.</p>
+        </div>
+
+        <div class="generator-layout">
+
+          <!-- LEFT: Input Form -->
+          <div class="card generator-form">
+            <div class="card-header">
+              <span class="card-title">🎨 Thumbnail Settings</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Video Topic</label>
+              <input type="text" class="form-input" id="videoTopic"
+                placeholder="e.g. How to Save Money Fast"
+                value="How to Save Money Fast"
+                maxlength="50"
+                oninput="updateCharCount('videoTopic', 'topicCount', 50)" />
+              <div class="char-count"><span id="topicCount">21</span>/50</div>
+              <div class="input-hint">
+                💡 Enter only the video topic. The system will build the thumbnail design automatically.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Thumbnail Style</label>
+              <div class="style-selector">
+                <div class="style-option active" onclick="selectStyle(this, 'modern')">
+                  <div class="style-option-icon">🎯</div>
+                  <div class="style-option-label">Modern</div>
+                </div>
+                <div class="style-option" onclick="selectStyle(this, 'bold')">
+                  <div class="style-option-icon">💥</div>
+                  <div class="style-option-label">Bold</div>
+                </div>
+                <div class="style-option" onclick="selectStyle(this, 'minimalist')">
+                  <div class="style-option-icon">✨</div>
+                  <div class="style-option-label">Minimalist</div>
+                </div>
+                <div class="style-option" onclick="selectStyle(this, 'retro')">
+                  <div class="style-option-icon">🎬</div>
+                  <div class="style-option-label">Retro</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Color Scheme</label>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-md);">
+                <label style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.85rem;color:var(--text-secondary);cursor:pointer;">
+                  <input type="radio" name="colorScheme" value="vibrant" checked style="accent-color:var(--primary);"> 🌈 Vibrant
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.85rem;color:var(--text-secondary);cursor:pointer;">
+                  <input type="radio" name="colorScheme" value="dark" style="accent-color:var(--primary);"> 🌙 Dark
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.85rem;color:var(--text-secondary);cursor:pointer;">
+                  <input type="radio" name="colorScheme" value="light" style="accent-color:var(--primary);"> ☀️ Light
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);font-size:0.85rem;color:var(--text-secondary);cursor:pointer;">
+                  <input type="radio" name="colorScheme" value="pastel" style="accent-color:var(--primary);"> 🎨 Pastel
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Number of Variations</label>
+              <select class="form-input" id="variations">
+                <option value="1" selected>1 Thumbnail</option>
+                <option value="2">2 Variations</option>
+                <option value="3">3 Variations</option>
+              </select>
+            </div>
+
+            <button class="btn btn-primary w-full" onclick="generateThumbnails()" id="generateBtn">
+              🎨 Generate Thumbnails
+            </button>
+            <div class="ai-generating" id="generatingIndicator">
+              <div class="ai-dot"></div>
+              <div class="ai-dot"></div>
+              <div class="ai-dot"></div>
+              <span>AI is generating your thumbnails...</span>
+            </div>
+          </div>
+
+          <!-- RIGHT: Output -->
+          <div>
+            <div class="card" id="outputCard">
+              <div class="card-header">
+                <span class="card-title">🖼️ Generated Thumbnails</span>
+              </div>
+
+              <div id="thumbnailsOutput">
+                <div class="empty-state">
+                  <div class="empty-state-icon">🎨</div>
+                  <div class="empty-state-title">No thumbnails generated yet</div>
+                  <div class="empty-state-text">Fill in the details and click "Generate Thumbnails" to create AI-powered designs</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/cookie-manager.js"></script>
+  <script src="../js/main.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    // Global variables and functions - defined early to avoid reference errors
+    let selectedStyle = 'modern';
+
+    function selectStyle(element, style) {
+      document.querySelectorAll('.style-option').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+      selectedStyle = style;
+    }
+
+    function updateCharCount(inputId, countId, max) {
+      const input = document.getElementById(inputId);
+      const count = document.getElementById(countId);
+      count.textContent = input.value.length;
+    }
+
+    async function generateThumbnails() {
+      try {
+        const topic = document.getElementById('videoTopic').value.trim();
+        const colorScheme = document.querySelector('input[name="colorScheme"]:checked').value;
+        const variations = parseInt(document.getElementById('variations').value);
+
+        if (!topic) {
+          showToast('Please enter a video topic', 'error');
+          return;
+        }
+
+        if (topic.length < 3) {
+          showToast('Topic must be at least 3 characters', 'error');
+          return;
+        }
+
+        showLoading('generateBtn', 'Generating...');
+        document.getElementById('generatingIndicator').style.display = 'flex';
+
+        // Build query parameters
+        const params = new URLSearchParams({
+          topic: topic,
+          title: topic,
+          style: selectedStyle,
+          color_scheme: colorScheme,
+          count: variations
+        });
+
+        // Get token from localStorage or cookie
+        let token = localStorage.getItem('auth_token');
+        if (!token && typeof CookieManager !== 'undefined') {
+          token = CookieManager.getCookie('auth_token');
+        }
+
+        if (!token) {
+          showToast('⚠️ Authentication required. Please login first.', 'error');
+          hideLoading('generateBtn', '🎨 Generate Thumbnails');
+          document.getElementById('generatingIndicator').style.display = 'none';
+          return;
+        }
+
+        const response = await fetch(`/api/content/generate/thumbnail?${params.toString()}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            showToast('⚠️ Session expired. Please login again.', 'error');
+            setTimeout(() => {
+              window.location.href = '/auth.html';
+            }, 2000);
+          } else {
+            throw new Error(data.detail || 'Failed to generate thumbnails');
+          }
+          return;
+        }
+
+        renderThumbnails(data.thumbnails);
+        showToast('✅ Thumbnails generated successfully!', 'success');
+
+      } catch (error) {
+        console.error('Error:', error);
+        showToast(error.message || 'Failed to generate thumbnails', 'error');
+      } finally {
+        hideLoading('generateBtn', '🎨 Generate Thumbnails');
+        document.getElementById('generatingIndicator').style.display = 'none';
+      }
+    }
+
+    function renderThumbnails(thumbnails) {
+      const output = document.getElementById('thumbnailsOutput');
+      
+      if (!thumbnails || thumbnails.length === 0) {
+        output.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-title">No thumbnails generated</div></div>';
+        return;
+      }
+
+      output.innerHTML = `
+        <div class="thumbnail-grid">
+          ${thumbnails.map((thumb, idx) => {
+            // Check if this is an error response
+            if (thumb.status === 'error' || !thumb.generated) {
+              return `
+                <div class="thumbnail-card error-card">
+                  <div class="thumbnail-card-image" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+                    <div style="font-size: 2rem;">❌</div>
+                    <div style="font-size: 0.9rem; font-weight: 600; text-align: center;">Generation Failed</div>
+                    <div style="font-size: 0.75rem; text-align: center; opacity: 0.9;">${thumb.error || 'Unknown error'}</div>
+                  </div>
+                  <div class="thumbnail-card-body">
+                    <div class="thumbnail-card-title">Error State</div>
+                    <div class="thumbnail-card-meta">
+                      <div style="color: #ff6b6b; font-weight: 500;">⚠️ Generation unavailable</div>
+                      <div style="margin-top: 8px; font-size: 0.8rem;">Please try again or check your connection</div>
+                    </div>
+                    <div class="thumbnail-card-actions">
+                      <button class="btn btn-primary btn-sm" onclick="generateThumbnails()">
+                        🔄 Retry
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+            
+            // Success response
+            return `
+              <div class="thumbnail-card">
+                <div class="thumbnail-card-image">
+                  ${thumb.thumbnail_url ? `<img src="${thumb.thumbnail_url}" style="width:100%;height:100%;object-fit:cover;">` : 'Thumbnail Preview'}
+                </div>
+                <div class="thumbnail-card-body">
+                  <div class="thumbnail-card-title">Variation ${idx + 1}</div>
+                  <div class="thumbnail-card-meta">
+                    <div>Style: ${thumb.style}</div>
+                    <div>${thumb.design_tips ? thumb.design_tips.length + ' tips' : 'No tips'}</div>
+                  </div>
+                  <div class="thumbnail-card-actions">
+                    <button class="btn btn-primary btn-sm" onclick="downloadThumbnail('${thumb.thumbnail_url}', ${idx + 1})">
+                      ⬇️ Download
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="copyToClipboard('${thumb.thumbnail_url}')">
+                      📋 Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function downloadThumbnail(url, index) {
+      if (!url) {
+        showToast('No URL available', 'error');
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `thumbnail-${index}.png`;
+      a.click();
+      showToast('✅ Downloading thumbnail...', 'success');
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text);
+      showToast('✅ Copied to clipboard!', 'success');
+    }
+
+    // Initialize when page is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!requireAuth()) return;
+      displayUserInfo();
+    });
+  </script>
+
+</body>
+</html>

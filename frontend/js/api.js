@@ -18,9 +18,18 @@ class APIClient {
     setToken(token) {
         this.token = token;
         if (token) {
-            localStorage.setItem('auth_token', token);
+            // Save to cookie instead of localStorage
+            if (typeof CookieManager !== 'undefined') {
+                CookieManager.setCookie('auth_token', token, {
+                    maxAge: 30 * 60 * 60
+                });
+            }
+            localStorage.setItem('auth_token', token); // Backward compatibility
         } else {
             localStorage.removeItem('auth_token');
+            if (typeof CookieManager !== 'undefined') {
+                CookieManager.deleteCookie('auth_token');
+            }
         }
     }
 
@@ -28,6 +37,16 @@ class APIClient {
      * Get authentication token
      */
     getToken() {
+        // Try to get from cookie first
+        if (typeof CookieManager !== 'undefined') {
+            const cookieToken = CookieManager.getCookie('auth_token');
+            if (cookieToken) {
+                this.token = cookieToken;
+                return cookieToken;
+            }
+        }
+        
+        // Fallback to localStorage
         return this.token || localStorage.getItem('auth_token');
     }
 
@@ -38,6 +57,11 @@ class APIClient {
         this.token = null;
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user_data');
+        if (typeof CookieManager !== 'undefined') {
+            CookieManager.deleteCookie('auth_token');
+            CookieManager.deleteCookie('user_data');
+            CookieManager.deleteCookie('token_expires_at');
+        }
     }
 
     /**
@@ -69,12 +93,34 @@ class APIClient {
             
             // Handle 401 Unauthorized (token expired or invalid)
             if (response.status === 401) {
+                console.log('Token expired or invalid, clearing auth data');
                 // Clear token and redirect to login
                 this.clearToken();
-                if (window.location.pathname !== '/auth.html' && window.location.pathname !== '/index.html') {
-                    window.location.href = '/auth.html';
+                if (typeof clearAuthData !== 'undefined') {
+                    clearAuthData();
                 }
-                throw new Error('Authentication required. Please login again.');
+                if (window.location.pathname !== '/auth.html' && window.location.pathname !== '/index.html') {
+                    window.location.href = '/auth.html?reason=session_expired';
+                }
+                throw new Error('Session expired. Please login again.');
+            }
+
+            // Handle 403 Forbidden (permission denied)
+            if (response.status === 403) {
+                console.log('Access forbidden');
+                throw new Error('Access denied. You do not have permission to access this resource.');
+            }
+
+            // Handle 429 Too Many Requests (quota exceeded)
+            if (response.status === 429) {
+                const data = await response.json();
+                const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+                const error = new Error(data.detail || 'Quota exceeded. Please try again later.');
+                error.status = 429;
+                error.quotaExceeded = true;
+                error.retryAfterSeconds = retryAfter;
+                error.retryAfterMessage = data.message || `Please wait ${retryAfter} seconds before retrying.`;
+                throw error;
             }
 
             // Parse JSON response
@@ -82,7 +128,9 @@ class APIClient {
 
             // Handle non-2xx responses
             if (!response.ok) {
-                throw new Error(data.detail || data.message || 'Request failed');
+                const error = new Error(data.detail || data.message || 'Request failed');
+                error.status = response.status;
+                throw error;
             }
 
             return data;
@@ -224,6 +272,13 @@ class APIClient {
         return this.get('/auth/check');
     }
 
+    /**
+     * Refresh access token
+     */
+    async refreshToken() {
+        return this.post('/auth/refresh', {});
+    }
+
     // ==================== User Profile Endpoints ====================
 
     /**
@@ -243,10 +298,11 @@ class APIClient {
     /**
      * Change password
      */
-    async changePassword(currentPassword, newPassword) {
+    async changePassword(currentPassword, newPassword, confirmPassword) {
         return this.post('/users/change-password', {
             current_password: currentPassword,
-            new_password: newPassword
+            new_password: newPassword,
+            confirm_password: confirmPassword
         });
     }
 
@@ -344,6 +400,13 @@ class APIClient {
     }
 
     // ==================== AI Content Generation Endpoints ====================
+
+    /**
+     * Get quota information
+     */
+    async getQuotaInfo() {
+        return this.get('/content/quota/info');
+    }
 
     /**
      * Generate video titles
