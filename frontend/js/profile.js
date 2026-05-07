@@ -14,7 +14,7 @@ let originalProfileData = {};
 let currentUser = null;
 
 // Fields that can be edited
-const EDITABLE_FIELDS = ['firstName', 'lastName', 'displayName', 'bio'];
+const EDITABLE_FIELDS = ['firstName', 'lastName', 'displayName', 'username', 'country', 'niche', 'bio'];
 
 // Initialize profile page
 document.addEventListener('DOMContentLoaded', () => {
@@ -51,25 +51,28 @@ async function loadProfileData() {
  * Render profile data in the UI
  */
 function renderProfile(user) {
-  // Parse full name
-  const nameParts = (user.full_name || '').split(' ');
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.slice(1).join(' ') || '';
+  // Parse full name from first and last name
+  const firstName = user.first_name || '';
+  const lastName = user.last_name || '';
+  const fullName = `${firstName} ${lastName}`.trim() || user.display_name || user.email;
   
-  // Update form fields
+  // Update form fields with REAL user data
   document.getElementById('firstName').value = firstName;
   document.getElementById('lastName').value = lastName;
-  document.getElementById('displayName').value = user.full_name || '';
+  document.getElementById('displayName').value = fullName;
   document.getElementById('email').value = user.email || '';
+  document.getElementById('username').value = user.username || '';
+  document.getElementById('country').value = user.country || 'us';
+  document.getElementById('niche').value = user.niche || 'tech';
   document.getElementById('bio').value = user.bio || '';
   
   // Update avatar displays
-  updateAvatarDisplays(user);
+  updateAvatarDisplays(user, fullName);
   
   // Update sidebar
   const sidebarName = document.getElementById('sidebarUserName');
   if (sidebarName) {
-    sidebarName.textContent = user.full_name || user.email;
+    sidebarName.textContent = fullName;
   }
   
   // Update account info
@@ -79,7 +82,7 @@ function renderProfile(user) {
 /**
  * Update avatar displays throughout the page
  */
-function updateAvatarDisplays(user) {
+function updateAvatarDisplays(user, fullName) {
   const avatarEl = document.getElementById('profileAvatarDisplay');
   const nameEl = document.getElementById('avatarDisplayName');
   const emailEl = document.getElementById('avatarDisplayEmail');
@@ -92,14 +95,15 @@ function updateAvatarDisplays(user) {
     avatarEl.textContent = '';
   } else {
     // Show initials
-    const initials = user.full_name 
-      ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    const displayName = fullName || user.full_name || user.email;
+    const initials = displayName 
+      ? displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
       : user.email[0].toUpperCase();
     avatarEl.textContent = initials;
     avatarEl.style.backgroundImage = 'none';
   }
   
-  if (nameEl) nameEl.textContent = user.full_name || user.email;
+  if (nameEl) nameEl.textContent = fullName || user.full_name || user.email;
   if (emailEl) emailEl.textContent = user.email;
 }
 
@@ -271,6 +275,9 @@ async function saveProfile() {
     const firstName = document.getElementById('firstName').value.trim();
     const lastName = document.getElementById('lastName').value.trim();
     const displayName = document.getElementById('displayName').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const country = document.getElementById('country').value;
+    const niche = document.getElementById('niche').value;
     const bio = document.getElementById('bio').value.trim();
     
     // Validation
@@ -285,12 +292,14 @@ async function saveProfile() {
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<span class="spinner"></span> Saving...';
     
-    // Combine first and last name
-    const fullName = `${firstName} ${lastName}`.trim();
-    
-    // Update profile via API
+    // Update profile via API with all fields
     const updatedUser = await api.updateUserProfile({
-      full_name: fullName,
+      first_name: firstName,
+      last_name: lastName,
+      display_name: displayName,
+      username: username,
+      country: country,
+      niche: niche,
       bio: bio
     });
     
@@ -298,14 +307,17 @@ async function saveProfile() {
     currentUser = updatedUser;
     originalProfileData = { ...updatedUser };
     
+    // Compute full name for display
+    const displayFullName = `${updatedUser.first_name || ''} ${updatedUser.last_name || ''}`.trim() || updatedUser.display_name || updatedUser.email;
+    
     // Update UI
     renderProfile(updatedUser);
-    updateAvatarDisplays(updatedUser);
+    updateAvatarDisplays(updatedUser, displayFullName);
     
     // Update sidebar
     const sidebarName = document.getElementById('sidebarUserName');
     if (sidebarName) {
-      sidebarName.textContent = updatedUser.full_name || updatedUser.email;
+      sidebarName.textContent = displayFullName;
     }
     
     // Save to localStorage

@@ -295,6 +295,76 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- ============================================
+-- AI CACHE TABLE (for quota management)
+-- ============================================
+CREATE TABLE IF NOT EXISTS ai_cache (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content_type VARCHAR(50) NOT NULL CHECK (content_type IN ('title', 'description', 'tags', 'thumbnail_text')),
+    prompt_hash VARCHAR(64) NOT NULL,
+    result JSONB NOT NULL,
+    tokens_used INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '24 hours'),
+    UNIQUE(user_id, content_type, prompt_hash)
+);
+
+-- Create indexes for faster lookups
+CREATE INDEX IF NOT EXISTS idx_ai_cache_user_id ON ai_cache(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_cache_created_at ON ai_cache(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_cache_expires_at ON ai_cache(expires_at);
+CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(user_id, content_type, prompt_hash);
+
+-- Enable RLS on ai_cache
+ALTER TABLE ai_cache ENABLE ROW LEVEL SECURITY;
+
+-- AI cache policies
+CREATE POLICY "Users can view own cache" ON ai_cache
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own cache" ON ai_cache
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- ============================================
+-- API QUOTA USAGE TABLE (persistent quota tracking)
+-- Replaces in-memory defaultdict — survives server restarts
+-- and works correctly across multiple server instances.
+-- ============================================
+CREATE TABLE IF NOT EXISTS api_quota_usage (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    -- Rolling window start (truncated to the minute for per-minute tracking)
+    window_minute TIMESTAMP WITH TIME ZONE NOT NULL,
+    -- Rolling window start (truncated to the hour)
+    window_hour   TIMESTAMP WITH TIME ZONE NOT NULL,
+    -- Rolling window start (truncated to the day, UTC)
+    window_day    TIMESTAMP WITH TIME ZONE NOT NULL,
+    request_count INTEGER NOT NULL DEFAULT 1,
+    token_count   BIGINT  NOT NULL DEFAULT 0,
+    created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    -- One row per user per minute window
+    UNIQUE(user_id, window_minute)
+);
+
+CREATE INDEX IF NOT EXISTS idx_quota_user_minute ON api_quota_usage(user_id, window_minute DESC);
+CREATE INDEX IF NOT EXISTS idx_quota_user_hour   ON api_quota_usage(user_id, window_hour   DESC);
+CREATE INDEX IF NOT EXISTS idx_quota_user_day    ON api_quota_usage(user_id, window_day    DESC);
+
+ALTER TABLE api_quota_usage ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own quota"   ON api_quota_usage
+    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own quota" ON api_quota_usage
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own quota" ON api_quota_usage
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE TRIGGER update_api_quota_usage_updated_at
+    BEFORE UPDATE ON api_quota_usage
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
 -- NOTES
 -- ============================================
 -- 1. Make sure to enable Row Level Security (RLS) in Supabase dashboard

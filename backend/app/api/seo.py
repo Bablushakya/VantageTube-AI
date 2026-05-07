@@ -38,7 +38,7 @@ async def analyze_video(
     return await SEOService.analyze_video(
         request.video_id,
         user_id,
-        request.force_reanalysis
+        request.force_reanalysis or False
     )
 
 

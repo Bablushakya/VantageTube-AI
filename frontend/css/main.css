@@ -661,3 +661,30 @@ input, textarea, select {
     padding: 0 var(--space-md);
   }
 }
+
+/* ============================================
+   QUOTA BAR  (Phase 6.1)
+   Compact usage bars shown in the sidebar footer
+   ============================================ */
+
+#quotaBarContainer {
+  /* Rendered entirely by JS — no static styles needed here,
+     but we ensure smooth transitions on the progress fills */
+}
+
+#quotaBarContainer .quota-fill {
+  transition: width 0.4s ease;
+}
+
+/* Regenerate / cache-restored badge in the generate card */
+.cache-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+}

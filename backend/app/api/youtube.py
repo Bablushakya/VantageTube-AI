@@ -59,28 +59,55 @@ async def youtube_oauth_callback(
     - **state**: User ID (passed during authorization)
     - **error**: Error from Google (if authorization failed)
     
-    Returns connected YouTube channel data
+    Redirects to oauth-callback.html page with code and state parameters
     """
     try:
         # Check for OAuth errors
         if error:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"OAuth error: {error}"
+            error_description = Query(None, description="Error description from Google")
+            return RedirectResponse(
+                url=f"/pages/oauth-callback.html?error={error}&error_description={error_description}",
+                status_code=302
             )
         
-        if not code:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No authorization code received"
+        if not code or not state:
+            return RedirectResponse(
+                url="/pages/oauth-callback.html?error=missing_parameters",
+                status_code=302
             )
         
-        if not state:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No user ID in state parameter"
-            )
+        # Redirect to oauth-callback.html with code and state
+        # The frontend will handle the token exchange
+        return RedirectResponse(
+            url=f"/pages/oauth-callback.html?code={code}&state={state}",
+            status_code=302
+        )
         
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return RedirectResponse(
+            url=f"/pages/oauth-callback.html?error=callback_failed&error_description={str(e)}",
+            status_code=302
+        )
+
+
+@router.post("/oauth/exchange")
+async def exchange_oauth_code(
+    code: str = Query(..., description="Authorization code from Google"),
+    state: str = Query(..., description="User ID")
+):
+    """
+    Exchange OAuth code for tokens and connect YouTube channel
+    
+    Called by frontend after OAuth callback
+    
+    - **code**: Authorization code from Google
+    - **state**: User ID
+    
+    Returns connected YouTube channel data
+    """
+    try:
         channel = await YouTubeService.handle_oauth_callback(code, state)
         
         return {
@@ -112,19 +139,17 @@ async def get_user_channels(user_id: str = Depends(get_current_user_id)):
 @router.post("/channels/{channel_id}/sync", response_model=ChannelSyncResponse)
 async def sync_channel_videos(
     channel_id: str,
-    max_results: int = Query(50, ge=1, le=50, description="Maximum number of videos to sync"),
+    max_results: int = Query(200, ge=1, le=500, description="Maximum number of videos to sync (default 200, max 500)"),
     user_id: str = Depends(get_current_user_id)
 ):
     """
-    Sync videos from YouTube channel
-    
-    Fetches latest videos from YouTube and stores them in database.
-    Updates existing videos if they already exist.
-    
+    Sync videos from YouTube channel.
+
+    Fetches ALL videos via the uploads playlist (cheap: 1 quota unit per page),
+    then writes them all in a single batch upsert.
+
     - **channel_id**: Channel database ID (not YouTube channel ID)
-    - **max_results**: Maximum number of videos to fetch (1-50)
-    
-    Returns sync result with number of videos synced
+    - **max_results**: Maximum videos to fetch (1-500, default 200)
     """
     return await YouTubeService.sync_channel_videos(channel_id, user_id, max_results)
 
@@ -132,19 +157,18 @@ async def sync_channel_videos(
 @router.get("/channels/{channel_id}/videos", response_model=List[VideoResponse])
 async def get_channel_videos(
     channel_id: str,
+    limit: int = Query(100, ge=1, le=500, description="Maximum number of videos to return"),
     user_id: str = Depends(get_current_user_id)
 ):
     """
-    Get all videos for a channel
-    
-    Returns list of videos from database (not from YouTube API).
-    Videos are ordered by published date (newest first).
-    
+    Get videos for a channel from the database.
+
+    Returns videos ordered by published date (newest first).
+
     - **channel_id**: Channel database ID
-    
-    Returns list of videos with statistics and SEO scores
+    - **limit**: Max videos to return (1-500, default 100)
     """
-    return await YouTubeService.get_channel_videos(channel_id, user_id)
+    return await YouTubeService.get_channel_videos(channel_id, user_id, limit)
 
 
 @router.delete("/channels/{channel_id}")
@@ -155,7 +179,7 @@ async def disconnect_channel(
     """
     Disconnect YouTube channel
     
-    Marks channel as disconnected but keeps historical data.
+    Deletes the channel connection and all associated data.
     
     - **channel_id**: Channel database ID
     
@@ -164,18 +188,39 @@ async def disconnect_channel(
     from app.core.supabase import get_supabase
     supabase = get_supabase()
     
-    # Update channel to disconnected
-    response = supabase.table("youtube_channels").update({
-        "is_connected": False
-    }).eq("id", channel_id).eq("user_id", user_id).execute()
-    
-    if not response.data:
+    try:
+        # First, verify the channel belongs to the user
+        channel_response = supabase.table("youtube_channels").select("*").eq("id", channel_id).eq("user_id", user_id).execute()
+        
+        if not channel_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Channel not found"
+            )
+        
+        # Delete all videos associated with this channel
+        supabase.table("videos").delete().eq("channel_id", channel_id).execute()
+        
+        # Delete the channel itself
+        delete_response = supabase.table("youtube_channels").delete().eq("id", channel_id).eq("user_id", user_id).execute()
+        
+        if not delete_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to disconnect channel"
+            )
+        
+        return {
+            "success": True,
+            "message": "Channel disconnected successfully",
+            "channel_id": channel_id
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Channel not found"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to disconnect channel: {str(e)}"
         )
-    
-    return {
-        "message": "Channel disconnected successfully",
-        "channel_id": channel_id
-    }

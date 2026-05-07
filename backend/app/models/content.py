@@ -54,6 +54,26 @@ class ThumbnailTextRequest(ContentGenerationRequest):
     count: int = Field(5, ge=1, le=10, description="Number of suggestions")
 
 
+class ThumbnailGenerationRequest(BaseModel):
+    """Request model for thumbnail generation"""
+    topic: str = Field(..., max_length=50, description="Video topic (max 50 chars)")
+    title: Optional[str] = Field(None, description="Video title for context")
+    style: str = Field("modern", description="Thumbnail style: modern, minimalist, bold, colorful")
+    color_scheme: str = Field("vibrant", description="Color scheme: vibrant, dark, light, pastel")
+    count: int = Field(1, ge=1, le=5, description="Number of thumbnails to generate")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "topic": "How to Learn Python",
+                "title": "Python for Beginners",
+                "style": "modern",
+                "color_scheme": "vibrant",
+                "count": 1
+            }
+        }
+
+
 class GeneratedTitle(BaseModel):
     """Single generated title"""
     text: str

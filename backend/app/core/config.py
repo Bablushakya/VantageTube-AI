@@ -31,10 +31,16 @@ class Settings(BaseSettings):
     YOUTUBE_API_KEY: str = ""
     YOUTUBE_CLIENT_ID: str = ""
     YOUTUBE_CLIENT_SECRET: str = ""
-    YOUTUBE_REDIRECT_URI: str = "http://localhost:8000/api/auth/youtube/callback"
+    YOUTUBE_REDIRECT_URI: str = "http://localhost:8000/api/youtube/oauth/callback"
     
     # OpenAI API Configuration
     OPENAI_API_KEY: str = ""
+    
+    # Gemini API Configuration
+    GEMINI_API_KEY: str = ""
+    
+    # Nano API Configuration (for thumbnail generation)
+    NANO_API_KEY: str = ""
     
     # CORS Settings
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500"
