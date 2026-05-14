@@ -1,0 +1,356 @@
+/* ============================================
+   VantageTube AI – UI Polish & Animations
+   Enhances the Tailwind-based pages with smooth
+   animations, transitions, and visual polish.
+   ============================================ */
+
+/* ============================================
+   GLOBAL ENHANCEMENTS
+   ============================================ */
+
+/* Smooth scrollbar for the entire app */
+html {
+  scroll-behavior: smooth;
+}
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hide duplicate Material icons (only keep first) */
+link[href*="Material+Symbols"] ~ link[href*="Material+Symbols"] {
+  display: none !important;
+}
+
+/* ============================================
+   PAGE TRANSITIONS
+   ============================================ */
+.page-transition {
+  animation: pageFadeIn 0.4s ease-out;
+}
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   GLASS CARD ENHANCEMENTS
+   ============================================ */
+.glass-card,
+.glass-surface,
+.glass-panel {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.glass-card:hover,
+.glass-surface:hover,
+.glass-panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+
+/* Subtle shine effect on cards */
+.glass-card::after,
+.glass-surface::after,
+.glass-panel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.02), transparent);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+.glass-card:hover::after,
+.glass-surface:hover::after,
+.glass-panel:hover::after {
+  left: 100%;
+}
+
+/* ============================================
+   SIDEBAR – Smooth navigation indicators
+   ============================================ */
+aside a {
+  position: relative;
+  overflow: hidden;
+}
+aside a .material-symbols-outlined {
+  transition: transform 0.2s ease;
+}
+aside a:hover .material-symbols-outlined {
+  transform: scale(1.15);
+}
+aside a.active-indicator {
+  box-shadow: inset 3px 0 0 #cabeff;
+}
+
+/* Sidebar scrollbar polish */
+aside::-webkit-scrollbar {
+  width: 3px;
+}
+aside::-webkit-scrollbar-thumb {
+  background: rgba(202, 190, 255, 0.2);
+  border-radius: 10px;
+}
+aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ============================================
+   HEADER / TOPBAR POLISH
+   ============================================ */
+header.sticky {
+  backdrop-filter: blur(16px);
+  background: rgba(28, 26, 36, 0.92) !important;
+}
+header button:hover .material-symbols-outlined {
+  transform: scale(1.1);
+}
+header button .material-symbols-outlined {
+  transition: transform 0.2s ease;
+}
+
+/* ============================================
+   BUTTON HOVER ENHANCEMENTS
+   ============================================ */
+button, a {
+  cursor: pointer;
+}
+
+/* Primary button glow */
+button.bg-primary-container,
+a.bg-primary-container,
+.bg-primary-container button {
+  transition: all 0.25s ease;
+}
+button.bg-primary-container:hover,
+a.bg-primary-container:hover {
+  box-shadow: 0 0 25px rgba(148, 125, 255, 0.35);
+}
+
+/* Gradient accent buttons */
+button[class*="bg-gradient"],
+a[class*="bg-gradient"] {
+  transition: all 0.3s ease;
+}
+button[class*="bg-gradient"]:hover,
+a[class*="bg-gradient"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(148, 125, 255, 0.3);
+}
+
+/* ============================================
+   FAQ ACCORDION (replaces broken group-hover:block)
+   ============================================ */
+.faq-item .faq-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.3s ease, margin 0.3s ease;
+  opacity: 0;
+}
+.faq-item.active .faq-content {
+  max-height: 300px;
+  opacity: 1;
+}
+.faq-item .faq-icon {
+  transition: transform 0.3s ease;
+}
+.faq-item.active .faq-icon {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   STAT COUNTER ANIMATIONS
+   ============================================ */
+.stat-counter {
+  display: inline-block;
+  transition: all 0.5s ease;
+}
+
+/* ============================================
+   TABLE POLISH
+   ============================================ */
+table tbody tr {
+  transition: background-color 0.2s ease;
+}
+table tbody tr:hover {
+  background: rgba(202, 190, 255, 0.04) !important;
+}
+
+/* ============================================
+   KPI CARD POLISH
+   ============================================ */
+.kpi-card-hover {
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card-hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #cabeff, #947dff);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.kpi-card-hover:hover::before {
+  opacity: 1;
+}
+.kpi-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+}
+
+/* ============================================
+   INPUT & FORM POLISH
+   ============================================ */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+}
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 2px rgba(148, 125, 255, 0.15);
+}
+
+/* Custom checkbox */
+input[type="checkbox"] {
+  accent-color: #947dff;
+}
+
+/* ============================================
+   BADGE PULSE FOR LIVE/LIVE ANALYSIS
+   ============================================ */
+.badge-live {
+  position: relative;
+}
+.badge-live::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #4ddcc6;
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: livePulse 1.5s infinite;
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.3); }
+}
+
+/* ============================================
+   SKELETON LOADING
+   ============================================ */
+.skeleton-loading {
+  background: linear-gradient(90deg, 
+    rgba(202, 190, 255, 0.05) 25%, 
+    rgba(202, 190, 255, 0.1) 50%, 
+    rgba(202, 190, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s infinite;
+  border-radius: 8px;
+}
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================
+   CHART ANIMATIONS (for simulated charts)
+   ============================================ */
+.chart-bar-animate {
+  animation: chartBarRise 0.6s ease-out forwards;
+  transform-origin: bottom;
+}
+@keyframes chartBarRise {
+  from { transform: scaleY(0.05); }
+  to { transform: scaleY(1); }
+}
+
+/* ============================================
+   TRAFFIC SOURCE COLOR VARIABLES
+   (Matches the Tailwind color tokens)
+   ============================================ */
+.chart-color-primary { background: #cabeff; }
+.chart-color-secondary { background: #4ddcc6; }
+.chart-color-tertiary { background: #ffb780; }
+.chart-color-surface { background: #36333e; }
+
+/* ============================================
+   TOPIC CARD / TRENDING CARD POLISH
+   ============================================ */
+.topic-card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.topic-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+}
+
+/* ============================================
+   MOBILE RESPONSIVE TWEAKS
+   ============================================ */
+@media (max-width: 768px) {
+  .glass-card,
+  .glass-surface,
+  .glass-panel {
+    transform: none !important;
+  }
+  .glass-card:hover,
+  .glass-surface:hover,
+  .glass-panel:hover {
+    transform: none !important;
+  }
+}
+
+/* ============================================
+   TOAST / NOTIFICATION ANIMATION
+   ============================================ */
+.toast-slide-in {
+  animation: toastIn 0.35s ease-out;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ============================================
+   PROGRESS BAR ENHANCEMENT
+   ============================================ */
+.progress-glow {
+  box-shadow: 0 0 12px rgba(202, 190, 255, 0.3);
+}
+
+/* ============================================
+   SCROLL-TRIGGERED FADE-IN UTILITY
+   ============================================ */
+.fade-in-section {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-in-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================
+   IMAGE HOVER ZOOM
+   ============================================ */
+.img-zoom-hover {
+  overflow: hidden;
+}
+.img-zoom-hover img {
+  transition: transform 0.4s ease;
+}
+.img-zoom-hover:hover img {
+  transform: scale(1.08);
+}

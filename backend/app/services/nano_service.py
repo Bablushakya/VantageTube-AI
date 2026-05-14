@@ -214,9 +214,9 @@ class NanoService:
     async def generate_multiple_thumbnails(
         self,
         topic: str,
-        title: str = None,
+        title: Optional[str] = None,
         count: int = 3,
-        styles: List[str] = None
+        styles: Optional[List[str]] = None
     ) -> Dict:
         """
         Generate multiple thumbnail variations

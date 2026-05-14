@@ -1,55 +1,49 @@
 # VantageTube AI - Backend Dependencies
-# Python 3.10+
+# Install with: pip install -r requirements.txt
 
-# FastAPI Framework
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 
-# Supabase Client (includes httpx dependency)
+# Data Validation
+pydantic==2.5.2
+pydantic-settings==2.1.0
+email-validator==2.1.0
+
+# Database
 supabase==2.9.0
+gotrue>=1.0.0
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
-python-dotenv==1.0.0
-pydantic==2.5.3
-pydantic-settings==2.1.0
-email-validator==2.1.0
 
-# HTTP & API
-# httpx version managed by supabase dependency
-requests==2.31.0
-aiohttp==3.9.1
-
-# Image Processing
-Pillow==10.1.0
+# AI Services
+google-generativeai==0.3.2
 
 # YouTube API
-google-api-python-client==2.116.0
-google-auth-httplib2==0.2.0
+google-api-python-client==2.108.0
 google-auth-oauthlib==1.2.0
-google-auth==2.27.0
+google-auth-httplib2==0.2.0
 isodate==0.6.1
 
-# OpenAI API
-openai==1.10.0
-
-# Google Generative AI (Gemini)
-google-generativeai==0.8.6
-
-# CORS
-fastapi-cors==0.0.6
-
-# Date & Time
-python-dateutil==2.8.2
-
-# Environment Variables
-python-decouple==3.8
-
-# In-memory TTL cache (L1 cache for quota manager)
+# Caching
 cachetools==5.3.2
 
-# Property-based testing
+# HTTP Client (for tests)
+httpx==0.27.2
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.23.2
+pytest-cov==4.1.0
+pytest-httpx==0.30.0
 hypothesis==6.100.0
+
+# Utilities
+typing-extensions>=4.8.0

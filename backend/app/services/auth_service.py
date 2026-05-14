@@ -48,19 +48,20 @@ class AuthService:
             existing_user = admin_supabase.table("users").select("*").eq("email", user_data.email).execute()
             if existing_user.data:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status_code=status.HTTP_409_CONFLICT,
                     detail="Email already registered"
                 )
             
             # Create user in Supabase Auth (without email confirmation for now)
             try:
-                auth_response = supabase.auth.sign_up({
-                    "email": user_data.email,
-                    "password": user_data.password,
-                    "options": {
-                        "email_redirect_to": None  # Disable email confirmation
-                    }
-                })
+                from gotrue.types import SignUpWithEmailAndPasswordCredentials
+                auth_response = supabase.auth.sign_up(
+                    SignUpWithEmailAndPasswordCredentials(
+                        email=user_data.email,
+                        password=user_data.password,
+                        options={"email_redirect_to": None},  # type: ignore[typeddict-item]
+                    )
+                )
             except Exception as auth_error:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -266,6 +267,13 @@ class AuthService:
         except HTTPException:
             raise
         except Exception as e:
+            error_str = str(e).lower()
+            # Handle Supabase responding with 400 for invalid UUID format
+            if "22p02" in error_str or "invalid input" in error_str or "bad request" in error_str:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found"
+                )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to get user: {str(e)}"

@@ -33,7 +33,8 @@ class StorageService:
             HTTPException: If upload fails
         """
         # Validate file extension
-        file_ext = os.path.splitext(file.filename)[1].lower()
+        filename_str = file.filename or ""
+        file_ext = os.path.splitext(filename_str)[1].lower()
         if file_ext not in StorageService.ALLOWED_EXTENSIONS:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -60,10 +61,10 @@ class StorageService:
             response = supabase.storage.from_(StorageService.BUCKET_NAME).upload(
                 filename,
                 content,
-                {
+                file_options={  # type: ignore[arg-type]
                     "content-type": file.content_type,
-                    "upsert": "true"
-                }
+                    "upsert": "true",
+                },
             )
             
             # Get public URL

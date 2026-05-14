@@ -15,7 +15,11 @@ from app.models.trending import (
     YOUTUBE_CATEGORIES
 )
 import re
+import logging
 from collections import Counter
+
+
+logger = logging.getLogger(__name__)
 
 
 class TrendingService:
@@ -139,7 +143,7 @@ class TrendingService:
             )
             
         except Exception as e:
-            print(f"Error parsing video data: {str(e)}")
+            logger.error(f"Error parsing video data: {str(e)}")
             return None
     
     def _calculate_viral_score(
@@ -254,7 +258,7 @@ class TrendingService:
             ).execute()
             
         except Exception as e:
-            print(f"Error saving trending videos: {str(e)}")
+            logger.error(f"Error saving trending videos: {str(e)}")
     
     async def get_trending_videos(
         self,

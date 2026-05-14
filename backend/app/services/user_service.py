@@ -246,22 +246,22 @@ class UserService:
                     detail="Settings not found"
                 )
             
-            settings_data = response.data[0]
+            updated_row = response.data[0]
             
             return UserSettingsResponse(
-                id=settings_data["id"],
-                user_id=settings_data["user_id"],
-                theme=settings_data.get("theme", "dark"),
-                accent_color=settings_data.get("accent_color", "#6C63FF"),
-                font_size=settings_data.get("font_size", "normal"),
-                compact_mode=settings_data.get("compact_mode", False),
-                email_notifications=settings_data.get("email_notifications", True),
-                weekly_seo_report=settings_data.get("weekly_seo_report", True),
-                trending_alerts=settings_data.get("trending_alerts", True),
-                feature_updates=settings_data.get("feature_updates", False),
-                milestone_alerts=settings_data.get("milestone_alerts", True),
-                profile_visibility=settings_data.get("profile_visibility", True),
-                analytics_sharing=settings_data.get("analytics_sharing", True)
+                id=updated_row["id"],
+                user_id=updated_row["user_id"],
+                theme=updated_row.get("theme", "dark"),
+                accent_color=updated_row.get("accent_color", "#6C63FF"),
+                font_size=updated_row.get("font_size", "normal"),
+                compact_mode=updated_row.get("compact_mode", False),
+                email_notifications=updated_row.get("email_notifications", True),
+                weekly_seo_report=updated_row.get("weekly_seo_report", True),
+                trending_alerts=updated_row.get("trending_alerts", True),
+                feature_updates=updated_row.get("feature_updates", False),
+                milestone_alerts=updated_row.get("milestone_alerts", True),
+                profile_visibility=updated_row.get("profile_visibility", True),
+                analytics_sharing=updated_row.get("analytics_sharing", True)
             )
             
         except HTTPException:

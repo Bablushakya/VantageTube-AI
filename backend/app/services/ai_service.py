@@ -185,7 +185,7 @@ class AIService:
         self,
         user_id: str,
         topic: str,
-        keywords: List[str] = None,
+        keywords: Optional[List[str]] = None,
         tone: str = "engaging",
         target_audience: Optional[str] = None,
         count: int = 5,
@@ -220,9 +220,9 @@ class AIService:
     async def _titles_internal(
         self,
         topic: str,
-        keywords: List[str],
+        keywords: Optional[List[str]],
         tone: str,
-        target_audience: str,
+        target_audience: Optional[str],
         count: int,
     ) -> Dict:
         if not self.gemini_model:
@@ -265,10 +265,10 @@ Return ONLY a JSON array, no markdown:
         self,
         user_id: str,
         topic: str,
-        title: str = None,
-        keywords: List[str] = None,
+        title: Optional[str] = None,
+        keywords: Optional[List[str]] = None,
         tone: str = "engaging",
-        target_audience: str = None,
+        target_audience: Optional[str] = None,
         video_length: str = "medium",
         include_timestamps: bool = True,
         include_links: bool = True,
@@ -306,10 +306,10 @@ Return ONLY a JSON array, no markdown:
     async def _description_internal(
         self,
         topic: str,
-        title: str,
-        keywords: List[str],
+        title: Optional[str],
+        keywords: Optional[List[str]],
         tone: str,
-        target_audience: str,
+        target_audience: Optional[str],
         video_length: str,
         include_timestamps: bool,
         include_links: bool,
@@ -350,7 +350,7 @@ Return ONLY a JSON object, no markdown:
 {{"description": "...", "seo_tips": ["tip1", "tip2"]}}"""
 
         response = await asyncio.to_thread(self.gemini_model.generate_content, prompt)
-        data = self._extract_json(response.text, array=False)
+        data: Dict = self._extract_json(response.text, array=False)  # type: ignore[assignment]
 
         return {
             "description": data.get("description", ""),
@@ -367,8 +367,8 @@ Return ONLY a JSON object, no markdown:
         self,
         user_id: str,
         topic: str,
-        title: str = None,
-        keywords: List[str] = None,
+        title: Optional[str] = None,
+        keywords: Optional[List[str]] = None,
         count: int = 20,
         use_cache: bool = True,
     ) -> Dict:
@@ -400,8 +400,8 @@ Return ONLY a JSON object, no markdown:
     async def _tags_internal(
         self,
         topic: str,
-        title: str,
-        keywords: List[str],
+        title: Optional[str],
+        keywords: Optional[List[str]],
         count: int,
     ) -> Dict:
         if not self.gemini_model:
@@ -431,7 +431,7 @@ Return ONLY a JSON object, no markdown:
 {{"primary_tags": [], "secondary_tags": [], "long_tail_tags": [], "broad_tags": [], "all_tags": []}}"""
 
         response = await asyncio.to_thread(self.gemini_model.generate_content, prompt)
-        data = self._extract_json(response.text, array=False)
+        data: Dict = self._extract_json(response.text, array=False)  # type: ignore[assignment]
 
         all_tags = data.get("all_tags") or []
         return {

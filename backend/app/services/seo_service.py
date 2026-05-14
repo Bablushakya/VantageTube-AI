@@ -3,7 +3,7 @@ VantageTube AI - SEO Analysis Service
 Handles video SEO scoring and analysis
 """
 
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime
 import re
 from app.core.supabase import get_supabase
@@ -36,7 +36,7 @@ class SEOAnalyzer:
     ]
     
     @staticmethod
-    def analyze_title(title: str, tags: List[str] = None) -> Tuple[int, SEOCriterion]:
+    def analyze_title(title: str, tags: Optional[List[str]] = None) -> Tuple[int, SEOCriterion]:
         """
         Analyze video title
         
