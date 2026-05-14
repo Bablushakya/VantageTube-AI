@@ -1,14 +1,16 @@
 /**
- * Video SEO Analyzer
+ * VantageTube AI – Video Analytics Dashboard
  *
- * Flow:
- *  1. Page loads → fetch video list only (no AI calls)
- *  2. User clicks a video → show its current title/description from DB
- *  3. User clicks "Generate AI SEO Content" → sequential AI calls:
- *       Step 1: generate titles   (await)
- *       Step 2: generate description (await, only after step 1 succeeds)
- *       Step 3: generate tags     (await, only after step 2 succeeds)
- *  4. isGenerating flag blocks any concurrent requests
+ * Complete rewrite: pure analytics dashboard, no AI SEO generation.
+ * Shows performance metrics, traffic sources, audience insights,
+ * retention graphs, keyword performance, and rule-based insights.
+ *
+ * Data source priority:
+ *   1. YouTube Analytics API (via backend)
+ *   2. YouTube Data API (via backend)
+ *   3. Mock data (backend fallback)
+ *
+ * Charts rendered with Chart.js (loaded from CDN in HTML).
  */
 
 if (!requireAuth()) { /* redirected */ }
@@ -16,46 +18,50 @@ if (!requireAuth()) { /* redirected */ }
 // ─── State ────────────────────────────────────────────────────────────────────
 let channelVideos   = [];
 let selectedVideo   = null;
-let isGenerating    = false;   // global lock – no concurrent AI calls
+let analyticsData   = null;
+let chartInstances  = {};     // { chartId: Chart }
+let isLoading       = false;
 
-let generatedContent = {
-  titles:      null,
-  description: null,
-  tags:        null
-};
-
-let currentTab = 'titles';
-
-// ─── sessionStorage cache key helpers ────────────────────────────────────────
-// 6.2: Results are stored per video-id so navigating away and back restores
-//      them instantly without re-generating (and without burning quota).
-const _SS_PREFIX = 'vt_analyzer_';
+// ─── Cache ────────────────────────────────────────────────────────────────────
+const _SS_PREFIX = 'vt_analytics_';
 
 function _cacheKey(videoId) {
   return `${_SS_PREFIX}${videoId}`;
 }
 
-function _saveToSession(videoId, content) {
+function _saveToSession(videoId, data) {
   try {
     sessionStorage.setItem(_cacheKey(videoId), JSON.stringify({
-      content,
+      data,
       savedAt: Date.now()
     }));
-  } catch (e) { /* sessionStorage full — ignore */ }
+  } catch (e) { /* sessionStorage full */ }
 }
 
 function _loadFromSession(videoId) {
   try {
     const raw = sessionStorage.getItem(_cacheKey(videoId));
     if (!raw) return null;
-    const { content, savedAt } = JSON.parse(raw);
-    // Expire after 30 minutes (session is short-lived anyway)
-    if (Date.now() - savedAt > 30 * 60 * 1000) {
+    const { data, savedAt } = JSON.parse(raw);
+    if (Date.now() - savedAt > 15 * 60 * 1000) { // 15 min expiry
       sessionStorage.removeItem(_cacheKey(videoId));
       return null;
     }
-    return content;
+    return data;
   } catch (e) { return null; }
+}
+
+function _clearCache(videoId) {
+  if (videoId) {
+    sessionStorage.removeItem(_cacheKey(videoId));
+  } else {
+    // Clear all analytics caches
+    Object.keys(sessionStorage).forEach(key => {
+      if (key.startsWith(_SS_PREFIX)) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  }
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
@@ -63,83 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const videoIdFromUrl = urlParams.get('video');
   loadVideos(videoIdFromUrl);
-  // 6.1: Load quota bar once on page load (non-blocking)
-  _loadQuotaBar();
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 6.1  QUOTA BAR
-// Fetches quota once on load and renders a compact usage bar in the sidebar.
-// Updates again after each successful generation.
-// ─────────────────────────────────────────────────────────────────────────────
-async function _loadQuotaBar() {
-  try {
-    const data = await api.getQuotaInfo();
-    _renderQuotaBar(data.quota);
-  } catch (e) {
-    // Quota bar is non-critical — fail silently
-  }
-}
-
-function _renderQuotaBar(quota) {
-  const container = document.getElementById('quotaBarContainer');
-  if (!container || !quota) return;
-
-  const reqUsed  = quota.requests?.used_day  || 0;
-  const reqLimit = quota.requests?.limit_day || 1500;
-  const tokUsed  = quota.tokens?.used_day    || 0;
-  const tokLimit = quota.tokens?.limit_day   || 500000;
-
-  const reqPct = Math.min(100, Math.round((reqUsed / reqLimit) * 100));
-  const tokPct = Math.min(100, Math.round((tokUsed / tokLimit) * 100));
-
-  const _color = pct => pct >= 90 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#10B981';
-
-  container.innerHTML = `
-    <div style="padding:12px 16px;border-top:1px solid var(--border);">
-      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;
-                  color:var(--text-muted);margin-bottom:8px;">AI Quota Today</div>
-
-      <div style="margin-bottom:6px;">
-        <div style="display:flex;justify-content:space-between;font-size:0.72rem;
-                    color:var(--text-secondary);margin-bottom:3px;">
-          <span>Requests</span>
-          <span>${reqUsed} / ${reqLimit}</span>
-        </div>
-        <div style="height:4px;background:var(--bg-surface);border-radius:99px;overflow:hidden;">
-          <div style="height:100%;width:${reqPct}%;background:${_color(reqPct)};
-                      border-radius:99px;transition:width 0.4s ease;"></div>
-        </div>
-      </div>
-
-      <div>
-        <div style="display:flex;justify-content:space-between;font-size:0.72rem;
-                    color:var(--text-secondary);margin-bottom:3px;">
-          <span>Tokens</span>
-          <span>${_fmtK(tokUsed)} / ${_fmtK(tokLimit)}</span>
-        </div>
-        <div style="height:4px;background:var(--bg-surface);border-radius:99px;overflow:hidden;">
-          <div style="height:100%;width:${tokPct}%;background:${_color(tokPct)};
-                      border-radius:99px;transition:width 0.4s ease;"></div>
-        </div>
-      </div>
-
-      ${reqPct >= 90 ? `
-        <div style="margin-top:8px;font-size:0.72rem;color:#EF4444;font-weight:600;">
-          ⚠️ Quota almost exhausted — resets at midnight UTC
-        </div>` : ''}
-    </div>
-  `;
-}
-
-function _fmtK(n) {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'K';
-  return String(n);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// LOAD VIDEO LIST  (no AI calls here)
+// LOAD VIDEO LIST
 // ─────────────────────────────────────────────────────────────────────────────
 async function loadVideos(preselectedId = null) {
   try {
@@ -154,8 +87,6 @@ async function loadVideos(preselectedId = null) {
     channelVideos = await api.getChannelVideos(channels[0].id, 100);
     renderVideoSelector();
 
-    // Pre-select from URL param or first video – but only show the detail panel,
-    // do NOT auto-generate AI content.
     const target = preselectedId
       ? channelVideos.find(v => v.id === preselectedId)
       : channelVideos[0];
@@ -194,25 +125,23 @@ function renderVideoSelector() {
   }
 
   list.innerHTML = channelVideos.map(v => {
-    const score     = v.seo_score || 0;
     const thumbnail = v.thumbnail_url || 'https://via.placeholder.com/120x68?text=No+Thumbnail';
     return `
       <div class="video-selector-item" id="vs-${v.id}" onclick="selectVideo('${v.id}')">
         <div class="vs-thumb"
-             style="background-image:url('${thumbnail}');background-size:cover;background-position:center;"></div>
+             style="background-image:url('${escapeHtml(thumbnail)}');background-size:cover;background-position:center;"></div>
         <div class="vs-info">
           <div class="vs-title">${escapeHtml(v.title)}</div>
-          <div class="vs-views">👁️ ${formatNumber(v.view_count || 0)} · ${formatTimeAgo(v.published_at)}</div>
+          <div class="vs-meta">👁️ ${formatNumber(v.view_count || 0)} · ${formatTimeAgo(v.published_at)}</div>
         </div>
-        <span class="vs-score" style="color:${getSeoColor(score)};">${score}</span>
       </div>`;
   }).join('');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SELECT VIDEO  – shows current data, NO AI calls
+// SELECT VIDEO
 // ─────────────────────────────────────────────────────────────────────────────
-function selectVideo(videoId) {
+async function selectVideo(videoId) {
   // Highlight in list
   document.querySelectorAll('.video-selector-item').forEach(el => el.classList.remove('selected'));
   const el = document.getElementById(`vs-${videoId}`);
@@ -221,467 +150,831 @@ function selectVideo(videoId) {
   selectedVideo = channelVideos.find(v => v.id === videoId);
   if (!selectedVideo) return;
 
-  // 6.2: Try to restore previously generated content from sessionStorage
-  const cached = _loadFromSession(videoId);
-  if (cached) {
-    generatedContent = cached;
-    currentTab = 'titles';
-  } else {
-    // Reset generated content whenever a new video is selected
-    generatedContent = { titles: null, description: null, tags: null };
-    currentTab = 'titles';
-  }
-
   // Update URL
   const url = new URL(window.location);
   url.searchParams.set('video', videoId);
   window.history.pushState({}, '', url);
 
-  // Render the detail panel with current DB data + generate button
-  renderDetailPanel();
+  // Show refresh button
+  document.getElementById('refreshAnalyticsBtn').style.display = 'block';
+
+  // Check cache
+  const cached = _loadFromSession(videoId);
+  if (cached) {
+    analyticsData = cached;
+    renderAnalyticsDashboard();
+    return;
+  }
+
+  // Load fresh analytics
+  await loadAnalytics(videoId);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DETAIL PANEL  – shows current title/description + generate button
+// LOAD ANALYTICS
 // ─────────────────────────────────────────────────────────────────────────────
-function renderDetailPanel() {
-  const panel = document.getElementById('analysisPanel');
-  if (!panel || !selectedVideo) return;
+async function loadAnalytics(videoId) {
+  if (isLoading) return;
+  isLoading = true;
+
+  // Show loading, hide other states
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('analyticsContent').style.display = 'block';
+  document.getElementById('analyticsLoading').style.display = 'flex';
+  document.getElementById('analyticsError').style.display = 'none';
+
+  try {
+    analyticsData = await api.getVideoAnalytics(videoId);
+    _saveToSession(videoId, analyticsData);
+    renderAnalyticsDashboard();
+  } catch (err) {
+    console.error('Failed to load analytics:', err);
+    document.getElementById('analyticsLoading').style.display = 'none';
+    document.getElementById('analyticsError').style.display = 'flex';
+    document.getElementById('analyticsErrorMessage').textContent =
+      err.message || 'Unable to fetch analytics data. Please try again.';
+  } finally {
+    isLoading = false;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RETRY / REFRESH
+// ─────────────────────────────────────────────────────────────────────────────
+function retryLoadAnalytics() {
+  if (selectedVideo) {
+    loadAnalytics(selectedVideo.id);
+  }
+}
+
+function refreshAnalytics() {
+  if (selectedVideo) {
+    _clearCache(selectedVideo.id);
+    loadAnalytics(selectedVideo.id);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER ANALYTICS DASHBOARD
+// ─────────────────────────────────────────────────────────────────────────────
+function renderAnalyticsDashboard() {
+  if (!analyticsData || !selectedVideo) return;
+
+  document.getElementById('analyticsLoading').style.display = 'none';
+  document.getElementById('analyticsError').style.display = 'none';
+  document.getElementById('analyticsContent').style.display = 'block';
+
+  // Destroy existing charts
+  destroyCharts();
+
+  renderVideoHeader();
+  renderPerformanceScore();
+  renderKPIMetrics();
+  renderViewsOverTime();
+  renderTrafficSources();
+  renderAudienceInsights();
+  // Render device bar chart after DOM is ready
+  setTimeout(() => {
+    const devices = analyticsData.audience?.device_types || [];
+    renderDeviceChart(devices);
+  }, 100);
+  renderRetention();
+  renderKeywords();
+  renderInsights();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VIDEO HEADER
+// ─────────────────────────────────────────────────────────────────────────────
+function renderVideoHeader() {
+  const section = document.getElementById('videoHeaderSection');
+  if (!section) return;
 
   const v = selectedVideo;
+  const d = analyticsData;
+  const classification = d.classification || 'Average';
 
-  panel.innerHTML = `
-    <!-- Video info card -->
+  const badgeClass = {
+    'Viral': 'badge-viral',
+    'High Performer': 'badge-high',
+    'Average': 'badge-average',
+    'Underperforming': 'badge-low'
+  }[classification] || 'badge-average';
+
+  const badgeIcon = {
+    'Viral': '🏆',
+    'High Performer': '⭐',
+    'Average': '📊',
+    'Underperforming': '⚠️'
+  }[classification] || '📊';
+
+  section.innerHTML = `
     <div class="card" style="margin-bottom:var(--space-lg);">
-      <div class="card-header">
-        <span class="card-title">Video Details</span>
-        <span style="font-size:0.75rem;color:var(--text-muted);">${formatTimeAgo(v.published_at)}</span>
-      </div>
-      <div style="display:flex;align-items:flex-start;gap:var(--space-lg);flex-wrap:wrap;">
-        <img src="${v.thumbnail_url || 'https://via.placeholder.com/160x90?text=No+Thumbnail'}"
-             alt="Thumbnail"
-             style="width:160px;height:90px;border-radius:8px;object-fit:cover;flex-shrink:0;">
-        <div style="flex:1;min-width:220px;">
-          <div style="font-size:0.95rem;font-weight:700;color:var(--text-primary);margin-bottom:var(--space-sm);line-height:1.4;">
-            ${escapeHtml(v.title)}
-          </div>
-          <div style="display:flex;flex-wrap:wrap;gap:var(--space-md);font-size:0.8rem;color:var(--text-muted);">
-            <span>👁️ ${formatNumber(v.view_count || 0)}</span>
+      <div class="video-header">
+        <img src="${v.thumbnail_url || 'https://via.placeholder.com/200x113?text=No+Thumbnail'}"
+             alt="Thumbnail" class="video-header-thumb">
+        <div class="video-header-info">
+          <div class="video-header-title">${escapeHtml(v.title)}</div>
+          <div class="video-header-meta">
+            <span>👁️ ${formatNumber(v.view_count || 0)} views</span>
             <span>👍 ${formatNumber(v.like_count || 0)}</span>
             <span>💬 ${formatNumber(v.comment_count || 0)}</span>
             <span>⏱️ ${formatDuration(v.duration)}</span>
+            <span>📅 ${formatDate(v.published_at)}</span>
+          </div>
+          <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center;">
+            <span class="video-header-badge ${badgeClass}">${badgeIcon} ${classification}</span>
+            ${d.is_mock ? `<span class="mock-badge">🔄 Estimated Data</span>` : `<span class="mock-badge" style="background:rgba(16,185,129,0.12);color:#10B981;">✓ Live Data</span>`}
+            ${d.analytics_source ? `<span style="font-size:0.68rem;color:var(--text-muted);">Source: ${d.analytics_source}</span>` : ''}
           </div>
         </div>
       </div>
-    </div>
+    </div>`;
+}
 
-    <!-- Current content card -->
+// ─────────────────────────────────────────────────────────────────────────────
+// PERFORMANCE SCORE
+// ─────────────────────────────────────────────────────────────────────────────
+function renderPerformanceScore() {
+  const section = document.getElementById('performanceScoreSection');
+  if (!section) return;
+
+  const score = analyticsData.performance_score || 0;
+  const engagementScore = analyticsData.engagement_score || 0;
+  const retentionScore = analyticsData.retention_score || 0;
+  const ctrScore = analyticsData.ctr_score || 0;
+
+  const circumference = 2 * Math.PI * 42; // r=42
+  const offset = circumference - (score / 100) * circumference;
+
+  const scoreColor = score >= 85 ? '#10B981' : score >= 70 ? '#3B82F6' : score >= 45 ? '#F59E0B' : '#EF4444';
+
+  section.innerHTML = `
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="performance-score-card">
+        <div class="score-ring">
+          <svg viewBox="0 0 100 100">
+            <circle class="score-ring-bg" cx="50" cy="50" r="42"/>
+            <circle class="score-ring-fill" cx="50" cy="50" r="42"
+                    stroke="${scoreColor}"
+                    stroke-dasharray="${circumference}"
+                    stroke-dashoffset="${offset}"/>
+          </svg>
+          <div class="score-text">
+            <div class="score-value" style="color:${scoreColor}">${score}</div>
+            <div class="score-label">Score</div>
+          </div>
+        </div>
+        <div class="score-details">
+          <div class="score-detail-item">
+            <div class="score-detail-value">${engagementScore}</div>
+            <div class="score-detail-label">Engagement</div>
+          </div>
+          <div class="score-detail-item">
+            <div class="score-detail-value">${retentionScore}</div>
+            <div class="score-detail-label">Retention</div>
+          </div>
+          <div class="score-detail-item">
+            <div class="score-detail-value">${ctrScore}</div>
+            <div class="score-detail-label">CTR</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KPI METRICS
+// ─────────────────────────────────────────────────────────────────────────────
+function renderKPIMetrics() {
+  const section = document.getElementById('kpiMetricsSection');
+  if (!section) return;
+
+  const m = analyticsData.metrics || {};
+
+  const kpis = [
+    { icon: '👁️', value: formatNumber(m.views || 0), label: 'Views' },
+    { icon: '⏱️', value: formatWatchTime(m.watch_time_hours || 0), label: 'Watch Time' },
+    { icon: '📏', value: formatDuration(m.average_view_duration || 0), label: 'Avg. View Duration' },
+    { icon: '➕', value: formatNumber(m.subscribers_gained || 0), label: 'Subs Gained' },
+    { icon: '👍', value: formatNumber(m.likes || 0), label: 'Likes' },
+    { icon: '💬', value: formatNumber(m.comments || 0), label: 'Comments' },
+    { icon: '🔗', value: formatNumber(m.shares || 0), label: 'Shares' },
+    { icon: '📈', value: `${m.ctr || 0}%`, label: 'CTR' },
+    { icon: '👀', value: formatNumber(m.impressions || 0), label: 'Impressions' },
+    { icon: '💵', value: m.estimated_revenue ? `$${m.estimated_revenue.toFixed(2)}` : 'N/A', label: 'Est. Revenue' },
+    { icon: '📊', value: `${m.impression_ctr || 0}%`, label: 'Impression CTR' },
+    { icon: '❤️', value: `${m.engagement_rate || 0}%`, label: 'Engagement Rate' },
+  ];
+
+  section.innerHTML = `
     <div class="card" style="margin-bottom:var(--space-lg);">
       <div class="card-header">
-        <span class="card-title">Current Content (from Database)</span>
+        <span class="card-title">Performance Metrics</span>
       </div>
-
-      <div style="margin-bottom:var(--space-lg);">
-        <div class="current-label">📌 Current Title</div>
-        <div class="current-box">
-          <div style="font-weight:600;line-height:1.4;margin-bottom:var(--space-sm);">${escapeHtml(v.title)}</div>
-          <button class="btn btn-sm btn-ghost" onclick="copyToClipboard(${JSON.stringify(v.title)})">📋 Copy</button>
-        </div>
-      </div>
-
-      <div>
-        <div class="current-label">📄 Current Description</div>
-        <div class="current-box" style="max-height:160px;overflow-y:auto;">
-          <div style="font-size:0.9rem;line-height:1.6;white-space:pre-wrap;margin-bottom:var(--space-sm);">
-            ${v.description ? escapeHtml(v.description) : '<span style="color:var(--text-muted);font-style:italic;">No description</span>'}
-          </div>
-          ${v.description ? `<button class="btn btn-sm btn-ghost" onclick="copyToClipboard(${JSON.stringify(v.description)})">📋 Copy</button>` : ''}
-        </div>
-      </div>
-    </div>
-
-    <!-- Generate button card -->
-    <div class="card" style="margin-bottom:var(--space-lg);">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-md);">
-        <div>
-          <div style="font-weight:600;margin-bottom:4px;">✨ AI SEO Content Generator</div>
-          <div style="font-size:0.82rem;color:var(--text-muted);">
-            Generates optimised titles → description → tags sequentially to respect API rate limits.
-          </div>
-          ${generatedContent.titles ? `
-            <div style="margin-top:6px;font-size:0.75rem;color:var(--success);font-weight:600;">
-              ✓ Results restored from session cache — no quota used
-            </div>` : ''}
-        </div>
-        <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center;">
-          ${generatedContent.titles ? `
-            <button class="btn btn-ghost btn-sm" onclick="_clearSessionAndRegen()"
-                    title="Discard cached results and generate fresh content">
-              🔄 Regenerate
-            </button>` : ''}
-          <button id="generateBtn"
-                  class="btn btn-primary"
-                  onclick="startSequentialGeneration()"
-                  ${isGenerating ? 'disabled' : ''}>
-            ${isGenerating ? '<span class="btn-spinner"></span> Generating…' : (generatedContent.titles ? '✅ Generated' : '🚀 Generate AI SEO Content')}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Results area (shown after generation) -->
-    <div id="resultsArea" style="display:${generatedContent.titles ? 'block' : 'none'};">
-      ${renderResultsTabs()}
-    </div>
-  `;
-
-  injectAnalyzerStyles();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SEQUENTIAL GENERATION  – the core of the fix
-// ─────────────────────────────────────────────────────────────────────────────
-async function startSequentialGeneration() {
-  if (isGenerating) return;          // hard lock – ignore double-clicks
-  if (!selectedVideo) return;
-
-  isGenerating = true;
-  setGenerateButton(true);
-
-  const v       = selectedVideo;
-  const topic   = v.title;
-  const keywords = v.tags || [];
-
-  try {
-    // ── STEP 1: Titles ────────────────────────────────────────────────────────
-    showStepStatus('titles', 'loading');
-
-    generatedContent.titles = await api.generateTitles({
-      topic,
-      keywords,
-      tone: 'engaging',
-      target_audience: 'YouTube viewers',
-      count: 5,
-      video_id: v.id
-    });
-
-    showStepStatus('titles', 'done');
-
-    // ── STEP 2: Description  (only runs after titles succeed) ─────────────────
-    showStepStatus('description', 'loading');
-
-    generatedContent.description = await api.generateDescription({
-      topic,
-      title: v.title,
-      keywords,
-      tone: 'engaging',
-      target_audience: 'YouTube viewers',
-      video_length: 'medium',
-      include_timestamps: true,
-      include_links: true,
-      include_cta: true,
-      video_id: v.id
-    });
-
-    showStepStatus('description', 'done');
-
-    // ── STEP 3: Tags  (only runs after description succeeds) ──────────────────
-    showStepStatus('tags', 'loading');
-
-    generatedContent.tags = await api.generateTags({
-      topic,
-      title: v.title,
-      keywords,
-      count: 20,
-      video_id: v.id
-    });
-
-    showStepStatus('tags', 'done');
-
-    // Show results
-    currentTab = 'titles';
-    showResults();
-
-    // 6.2: Persist results to sessionStorage so navigation doesn't lose them
-    _saveToSession(v.id, generatedContent);
-
-    // 6.1: Refresh quota bar to reflect the tokens just consumed
-    _loadQuotaBar();
-
-  } catch (err) {
-    console.error('Generation error:', err);
-
-    let msg;
-    if (err.quotaExceeded) {
-      const secs = err.retryAfterSeconds || 60;
-      msg = err.retryAfterMessage || `Quota exceeded. Try again in ${secs} seconds.`;
-      // Start a visible countdown in the UI
-      _startRetryCountdown(secs);
-    } else {
-      msg = `Generation failed: ${err.message}`;
-    }
-
-    showToast(msg, 'error');
-    showGenerationError(msg);
-  } finally {
-    isGenerating = false;
-    setGenerateButton(false);
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// UI HELPERS FOR GENERATION FLOW
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Enable / disable the generate button */
-function setGenerateButton(loading) {
-  const btn = document.getElementById('generateBtn');
-  if (!btn) return;
-  btn.disabled = loading;
-  btn.innerHTML = loading
-    ? '<span class="btn-spinner"></span> Generating…'
-    : '🚀 Generate AI SEO Content';
-}
-
-/**
- * Show a step status indicator inside the generate card.
- * Creates the progress area on first call.
- */
-function showStepStatus(step, state) {
-  // Ensure progress container exists
-  let progress = document.getElementById('generationProgress');
-  if (!progress) {
-    const card = document.getElementById('generateBtn')?.closest('.card');
-    if (!card) return;
-    progress = document.createElement('div');
-    progress.id = 'generationProgress';
-    progress.style.cssText = 'margin-top:var(--space-md);display:flex;flex-direction:column;gap:8px;';
-    card.appendChild(progress);
-  }
-
-  const icons = { titles: '📝', description: '📄', tags: '🏷️' };
-  const labels = { titles: 'Titles', description: 'Description', tags: 'Tags' };
-
-  let row = document.getElementById(`step-${step}`);
-  if (!row) {
-    row = document.createElement('div');
-    row.id = `step-${step}`;
-    row.style.cssText = 'display:flex;align-items:center;gap:10px;font-size:0.85rem;';
-    progress.appendChild(row);
-  }
-
-  const spinnerHTML = `<span class="step-spinner"></span>`;
-  const doneHTML    = `<span style="color:var(--success);">✓</span>`;
-
-  row.innerHTML = state === 'loading'
-    ? `${spinnerHTML} <span style="color:var(--text-secondary);">${icons[step]} Generating ${labels[step]}…</span>`
-    : `${doneHTML} <span style="color:var(--text-muted);">${icons[step]} ${labels[step]} ready</span>`;
-}
-
-function showGenerationError(msg) {
-  let progress = document.getElementById('generationProgress');
-  if (!progress) return;
-  progress.insertAdjacentHTML('beforeend', `
-    <div style="color:var(--danger);font-size:0.85rem;margin-top:4px;">❌ ${escapeHtml(msg)}</div>
-  `);
-}
-
-function showResults() {
-  const area = document.getElementById('resultsArea');
-  if (!area) return;
-  area.style.display = 'block';
-  area.innerHTML = renderResultsTabs();
-}
-
-/**
- * 6.2: Clear the sessionStorage cache for the current video and trigger
- * a fresh generation.  Called by the "Regenerate" button.
- */
-function _clearSessionAndRegen() {
-  if (!selectedVideo) return;
-  sessionStorage.removeItem(_cacheKey(selectedVideo.id));
-  generatedContent = { titles: null, description: null, tags: null };
-  renderDetailPanel();
-  startSequentialGeneration();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RESULTS TABS
-// ─────────────────────────────────────────────────────────────────────────────
-function renderResultsTabs() {
-  return `
-    <div class="card" style="margin-bottom:var(--space-lg);">
-      <div style="display:flex;gap:0;border-bottom:1px solid var(--border-color);overflow-x:auto;">
-        ${['titles','description','tags'].map(t => `
-          <button class="tab-btn ${currentTab === t ? 'active' : ''}" onclick="switchTab('${t}')">
-            ${{ titles:'📝 Titles', description:'📄 Description', tags:'🏷️ Tags' }[t]}
-          </button>`).join('')}
-      </div>
-    </div>
-    <div id="tabContent">${renderTabContent()}</div>
-  `;
-}
-
-function switchTab(tab) {
-  currentTab = tab;
-  const content = document.getElementById('tabContent');
-  if (content) content.innerHTML = renderTabContent();
-
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    if (b.textContent.toLowerCase().includes(tab)) b.classList.add('active');
-  });
-}
-
-function renderTabContent() {
-  switch (currentTab) {
-    case 'titles':      return renderTitlesTab();
-    case 'description': return renderDescriptionTab();
-    case 'tags':        return renderTagsTab();
-    default:            return '';
-  }
-}
-
-// ── Titles tab ────────────────────────────────────────────────────────────────
-function renderTitlesTab() {
-  if (!generatedContent.titles) {
-    return loadingPlaceholder('Titles will appear here after generation.');
-  }
-
-  const titles = generatedContent.titles.titles || [];
-
-  return `
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">AI-Generated Titles</span>
-        <span style="font-size:0.75rem;color:var(--text-muted);">${titles.length} options</span>
-      </div>
-      <div style="display:grid;gap:var(--space-md);">
-        ${titles.map(t => `
-          <div class="result-item">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-sm);margin-bottom:var(--space-sm);">
-              <div style="font-weight:600;flex:1;line-height:1.4;">${escapeHtml(t.title)}</div>
-              <span class="score-badge">${t.seo_score || 0}/100</span>
+      <div style="padding:var(--space-lg);">
+        <div class="kpi-grid">
+          ${kpis.map(kpi => `
+            <div class="kpi-card">
+              <div class="kpi-icon">${kpi.icon}</div>
+              <div class="kpi-value">${kpi.value}</div>
+              <div class="kpi-label">${kpi.label}</div>
             </div>
-            <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:var(--space-sm);">${escapeHtml(t.reasoning || '')}</div>
-            <button class="btn btn-sm btn-primary" onclick="copyToClipboard(${JSON.stringify(t.title)})">📋 Copy</button>
-          </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-// ── Description tab ───────────────────────────────────────────────────────────
-function renderDescriptionTab() {
-  if (!generatedContent.description) {
-    return loadingPlaceholder('Description will appear here after generation.');
-  }
-
-  const desc = generatedContent.description;
-
-  return `
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">AI-Generated Description</span>
-      </div>
-      <div class="result-item" style="margin-bottom:var(--space-lg);">
-        <div style="font-size:0.9rem;line-height:1.7;white-space:pre-wrap;max-height:320px;overflow-y:auto;margin-bottom:var(--space-md);">
-          ${escapeHtml(desc.description || '')}
+          `).join('')}
         </div>
-        <button class="btn btn-sm btn-primary" onclick="copyToClipboard(${JSON.stringify(desc.description || '')})">📋 Copy Description</button>
       </div>
-      ${desc.seo_tips && desc.seo_tips.length ? `
-        <div>
-          <div style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:var(--space-sm);">💡 SEO Tips</div>
-          <ul style="margin-left:var(--space-md);color:var(--text-secondary);font-size:0.88rem;line-height:1.7;">
-            ${desc.seo_tips.map(tip => `<li>${escapeHtml(tip)}</li>`).join('')}
-          </ul>
-        </div>` : ''}
     </div>`;
 }
 
-// ── Tags tab ──────────────────────────────────────────────────────────────────
-function renderTagsTab() {
-  if (!generatedContent.tags) {
-    return loadingPlaceholder('Tags will appear here after generation.');
+// ─────────────────────────────────────────────────────────────────────────────
+// VIEWS OVER TIME (line chart)
+// ─────────────────────────────────────────────────────────────────────────────
+function renderViewsOverTime() {
+  const section = document.getElementById('viewsOverTimeSection');
+  if (!section) return;
+
+  const viewsOverTime = analyticsData.views_over_time || [];
+
+  if (!viewsOverTime || viewsOverTime.length === 0) {
+    section.innerHTML = '';
+    return;
   }
 
-  const tags = generatedContent.tags;
-  const allTags = tags.tags || tags.all_tags || [];
-
-  return `
-    <div class="card">
+  section.innerHTML = `
+    <div class="card" style="margin-bottom:var(--space-lg);">
       <div class="card-header">
-        <span class="card-title">AI-Generated Tags</span>
-        <span style="font-size:0.75rem;color:var(--text-muted);">${allTags.length} tags</span>
+        <span class="card-title">Views Over Time</span>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-bottom:var(--space-lg);">
-        ${allTags.map(t => `<span class="tag-chip accent">#${escapeHtml(t)}</span>`).join('')}
+      <div class="chart-container">
+        <canvas id="viewsOverTimeChart"></canvas>
       </div>
-      <button class="btn btn-sm btn-primary" onclick="copyToClipboard(${JSON.stringify(allTags.join(', '))})">📋 Copy All Tags</button>
     </div>`;
-}
 
-function loadingPlaceholder(msg) {
-  return `
-    <div class="card">
-      <div style="text-align:center;padding:var(--space-xl);color:var(--text-muted);">
-        <div style="font-size:2rem;margin-bottom:var(--space-sm);">✨</div>
-        <p>${msg}</p>
-      </div>
-    </div>`;
+  setTimeout(() => {
+    const ctx = document.getElementById('viewsOverTimeChart');
+    if (!ctx) return;
+
+    const labels = viewsOverTime.map(v => v.date);
+    const views = viewsOverTime.map(v => v.views);
+
+    chartInstances.viewsOverTimeChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Daily Views',
+          data: views,
+          borderColor: '#3B82F6',
+          backgroundColor: (ctx) => {
+            const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+            return gradient;
+          },
+          fill: true,
+          tension: 0.3,
+          pointRadius: 1,
+          pointHoverRadius: 4,
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          x: {
+            ticks: { color: '#64748B', font: { size: 9 }, maxTicksLimit: 10 },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+          },
+          y: {
+            ticks: { color: '#64748B', font: { size: 9 } },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            beginAtZero: true,
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${formatNumber(ctx.parsed.y)} views`
+            }
+          }
+        },
+        interaction: { intersect: false, mode: 'index' },
+      }
+    });
+  }, 50);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RETRY COUNTDOWN
+// TRAFFIC SOURCES (donut chart)
 // ─────────────────────────────────────────────────────────────────────────────
+function renderTrafficSources() {
+  const section = document.getElementById('trafficSourcesSection');
+  if (!section) return;
 
-/**
- * Show a live countdown inside the generate button area so the user knows
- * exactly when they can retry.  Automatically re-enables the button when done.
- */
-function _startRetryCountdown(seconds) {
-  const btn = document.getElementById('generateBtn');
-  if (!btn) return;
+  const sources = analyticsData.traffic_sources || [];
 
-  let remaining = seconds;
+  if (sources.length === 0) {
+    section.innerHTML = `<div class="card"><div class="card-header"><span class="card-title">Traffic Sources</span></div><div style="padding:var(--space-lg);color:var(--text-muted);text-align:center;">No traffic source data available.</div></div>`;
+    return;
+  }
 
-  const tick = () => {
-    if (remaining <= 0) {
-      // Re-enable the button
-      isGenerating = false;
-      setGenerateButton(false);
+  section.innerHTML = `
+    <div class="card" style="height:100%;">
+      <div class="card-header">
+        <span class="card-title">Traffic Sources</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="trafficChart"></canvas>
+      </div>
+    </div>`;
 
-      // Remove any progress rows so the panel looks clean for the next attempt
-      const progress = document.getElementById('generationProgress');
-      if (progress) progress.remove();
-      return;
-    }
+  // Render chart after DOM update
+  setTimeout(() => {
+    const ctx = document.getElementById('trafficChart');
+    if (!ctx) return;
 
-    btn.disabled = true;
-    btn.innerHTML = `⏳ Retry in ${remaining}s`;
-    remaining--;
-    setTimeout(tick, 1000);
+    const labels = sources.map(s => s.source);
+    const data = sources.map(s => s.percentage);
+    const colors = [
+      '#6C63FF', '#3B82F6', '#10B981', '#F59E0B',
+      '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'
+    ];
+
+    chartInstances.trafficChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: colors.slice(0, labels.length),
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#94A3B8',
+              font: { size: 11 },
+              padding: 12,
+              usePointStyle: true,
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.label}: ${ctx.parsed}%`
+            }
+          }
+        }
+      }
+    });
+  }, 50);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEVICE TYPES (bar chart)
+// ─────────────────────────────────────────────────────────────────────────────
+function renderDeviceChart(devices) {
+  // Renders inside the audience section, no separate canvas needed
+  // Just find existing device list and convert to bar chart
+  setTimeout(() => {
+    const canvas = document.getElementById('deviceBarChart');
+    if (!canvas || !devices || devices.length === 0) return;
+
+    chartInstances.deviceBarChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: devices.map(d => d.device),
+        datasets: [{
+          label: 'Device Type %',
+          data: devices.map(d => d.percentage),
+          backgroundColor: ['#6C63FF', '#3B82F6', '#10B981', '#F59E0B'],
+          borderRadius: 4,
+          maxBarThickness: 40,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        indexAxis: 'y',
+        scales: {
+          x: {
+            ticks: { color: '#64748B', font: { size: 9 }, callback: (v) => `${v}%` },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            max: 100,
+          },
+          y: {
+            ticks: { color: '#94A3B8', font: { size: 10 } },
+            grid: { display: false },
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.x}%` } }
+        },
+      }
+    });
+  }, 50);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUDIENCE INSIGHTS
+// ─────────────────────────────────────────────────────────────────────────────
+function renderAudienceInsights() {
+  const section = document.getElementById('audienceSection');
+  if (!section) return;
+
+  const audience = analyticsData.audience || {};
+  const countries = audience.top_countries || [];
+  const devices = audience.device_types || [];
+  const returningNew = audience.returning_vs_new || { returning: 0, new: 0 };
+  const subNonSub = audience.subscriber_vs_non || { subscriber: 0, non_subscriber: 0 };
+
+  const deviceIcons = { Mobile: '📱', Desktop: '💻', Tablet: '📟', TV: '📺' };
+
+  const colors = ['#6C63FF', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+
+  // Country flags mapping (simple)
+  const countryFlags = {
+    'United States': '🇺🇸', 'India': '🇮🇳', 'United Kingdom': '🇬🇧',
+    'Canada': '🇨🇦', 'Australia': '🇦🇺', 'Germany': '🇩🇪',
+    'France': '🇫🇷', 'Brazil': '🇧🇷', 'Japan': '🇯🇵',
+    'South Korea': '🇰🇷', 'Russia': '🇷🇺', 'Mexico': '🇲🇽',
+    'Indonesia': '🇮🇩', 'Turkey': '🇹🇷', 'Spain': '🇪🇸',
   };
 
-  tick();
+  section.innerHTML = `
+    <div class="card" style="height:100%;">
+      <div class="card-header">
+        <span class="card-title">Audience Insights</span>
+      </div>
+      <div class="audience-grid">
+        <div>
+          <div class="audience-section-title">Top Countries</div>
+          <div class="audience-country-list">
+            ${countries.slice(0, 5).map((c, i) => `
+              <div class="audience-country-item">
+                <span class="audience-country-flag">${countryFlags[c.country] || '🌍'}</span>
+                <span class="audience-country-name">${c.country}</span>
+                <div class="audience-country-bar">
+                  <div class="audience-country-fill" style="width:${c.percentage}%;background:${colors[i]};"></div>
+                </div>
+                <span class="audience-country-pct">${c.percentage}%</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="audience-section-title">Device Types</div>
+          <div style="height:160px;margin-bottom:var(--space-md);">
+            <canvas id="deviceBarChart"></canvas>
+          </div>
+
+          <div class="audience-section-title" style="margin-top:var(--space-lg);">Viewer Type</div>
+          <div class="split-row">
+            <div class="split-item returning">
+              <div class="split-value">${returningNew.returning}%</div>
+              <div class="split-label">Returning</div>
+            </div>
+            <div class="split-item new">
+              <div class="split-value">${returningNew.new}%</div>
+              <div class="split-label">New</div>
+            </div>
+          </div>
+
+          <div class="audience-section-title" style="margin-top:var(--space-md);">Subscription</div>
+          <div class="split-row">
+            <div class="split-item subscriber">
+              <div class="split-value">${subNonSub.subscriber}%</div>
+              <div class="split-label">Subscriber</div>
+            </div>
+            <div class="split-item non-sub">
+              <div class="split-value">${subNonSub.non_subscriber}%</div>
+              <div class="split-label">Non-Subscriber</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RETENTION ANALYSIS (line chart)
+// ─────────────────────────────────────────────────────────────────────────────
+function renderRetention() {
+  const section = document.getElementById('retentionSection');
+  if (!section) return;
+
+  const retention = analyticsData.retention || {};
+  const points = retention.points || [];
+  const avgPct = retention.average_percentage_viewed || 0;
+  const dropOffs = retention.drop_off_points || [];
+  const bestTimestamps = retention.best_performing_timestamps || [];
+
+  section.innerHTML = `
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="card-header">
+        <span class="card-title">Audience Retention</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="retentionChart"></canvas>
+      </div>
+      <div class="retention-info">
+        <div class="retention-stat">
+          <div class="retention-stat-value">${avgPct}%</div>
+          <div class="retention-stat-label">Avg. Viewed</div>
+        </div>
+        ${dropOffs.slice(0, 3).map(d => `
+          <div class="retention-stat">
+            <div class="retention-stat-value">-${d.percentage}%</div>
+            <div class="retention-stat-label">${escapeHtml(d.label)}</div>
+          </div>
+        `).join('')}
+      </div>
+      ${bestTimestamps.length > 0 ? `
+      <div style="padding:0 var(--space-lg) var(--space-lg);border-top:1px solid var(--border);padding-top:var(--space-md);">
+        <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);margin-bottom:var(--space-sm);text-transform:uppercase;letter-spacing:0.04em;">Best Performing Segments</div>
+        <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">
+          ${bestTimestamps.map(t => `
+            <span style="background:rgba(16,185,129,0.1);color:var(--success);padding:4px 12px;border-radius:var(--radius-full);font-size:0.78rem;font-weight:600;">
+              ${formatTimestamp(t.at_seconds)} – ${escapeHtml(t.label)}
+            </span>
+          `).join('')}
+        </div>
+      </div>` : ''}
+    </div>`;
+
+  // Render retention chart
+  setTimeout(() => {
+    const ctx = document.getElementById('retentionChart');
+    if (!ctx) return;
+
+    const labels = points.map(p => `${p.percentage_watched}%`);
+    const data = points.map(p => p.viewer_percentage);
+
+    chartInstances.retentionChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Viewers Retained',
+          data,
+          borderColor: '#6C63FF',
+          backgroundColor: (ctx) => {
+            const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(108, 99, 255, 0.2)');
+            gradient.addColorStop(1, 'rgba(108, 99, 255, 0.0)');
+            return gradient;
+          },
+          fill: true,
+          tension: 0.4,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          x: {
+            display: true,
+            title: {
+              display: true,
+              text: 'Percentage of Video Watched',
+              color: '#64748B',
+              font: { size: 10 },
+            },
+            ticks: {
+              color: '#64748B',
+              font: { size: 9 },
+              maxTicksLimit: 10,
+            },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+          },
+          y: {
+            display: true,
+            title: {
+              display: true,
+              text: 'Viewers (%)',
+              color: '#64748B',
+              font: { size: 10 },
+            },
+            ticks: {
+              color: '#64748B',
+              font: { size: 9 },
+              callback: (v) => `${v}%`,
+            },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            min: 0,
+            max: 100,
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.parsed.y}% viewers retained`
+            }
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index',
+        },
+      }
+    });
+  }, 50);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KEYWORD PERFORMANCE
+// ─────────────────────────────────────────────────────────────────────────────
+function renderKeywords() {
+  const section = document.getElementById('keywordsSection');
+  if (!section) return;
+
+  const keywords = analyticsData.keywords || [];
+
+  if (!keywords || keywords.length === 0) {
+    section.innerHTML = '';
+    return;
+  }
+
+  // Sort by impressions descending
+  const sorted = [...keywords].sort((a, b) => b.impressions - a.impressions);
+
+  section.innerHTML = `
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="card-header">
+        <span class="card-title">Keyword Performance</span>
+        <span style="font-size:0.75rem;color:var(--text-muted);">${keywords.length} keywords</span>
+      </div>
+      <div style="overflow-x:auto;padding:0 var(--space-sm) var(--space-sm);">
+        <table class="keywords-table">
+          <thead>
+            <tr>
+              <th>Search Term</th>
+              <th style="text-align:right;">Impressions</th>
+              <th style="text-align:right;">Clicks</th>
+              <th style="text-align:right;">CTR</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map(k => `
+              <tr>
+                <td><span class="keyword-term">${escapeHtml(k.term)}</span></td>
+                <td style="text-align:right;">${formatNumber(k.impressions)}</td>
+                <td style="text-align:right;">${formatNumber(k.clicks)}</td>
+                <td style="text-align:right;font-weight:600;color:${k.ctr > 5 ? 'var(--success)' : k.ctr > 2 ? 'var(--text-primary)' : 'var(--text-muted)'}">${k.ctr}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INSIGHTS
+// ─────────────────────────────────────────────────────────────────────────────
+function renderInsights() {
+  const section = document.getElementById('insightsSection');
+  if (!section) return;
+
+  const insights = analyticsData.insights || [];
+
+  if (!insights || insights.length === 0) {
+    section.innerHTML = '';
+    return;
+  }
+
+  const typeIcons = {
+    positive: '✅',
+    warning: '⚠️',
+    info: '💡',
+  };
+
+  section.innerHTML = `
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="card-header">
+        <span class="card-title">Content Quality Insights</span>
+        <span style="font-size:0.75rem;color:var(--text-muted);">Rule-based analysis</span>
+      </div>
+      <div class="insights-grid">
+        ${insights.map(insight => `
+          <div class="insight-item ${insight.type}">
+            <span class="insight-icon">${typeIcons[insight.type] || '💡'}</span>
+            <div class="insight-content">
+              <div class="insight-category">${escapeHtml(insight.category)}</div>
+              <div class="insight-message">${escapeHtml(insight.message)}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHART MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+function destroyCharts() {
+  Object.values(chartInstances).forEach(chart => {
+    if (chart) {
+      try { chart.destroy(); } catch (e) { /* ignore */ }
+    }
+  });
+  chartInstances = {};
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FORMATTERS
+// ─────────────────────────────────────────────────────────────────────────────
+function formatNumber(num) {
+  if (num === null || num === undefined) return '0';
+  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
+  if (num >= 1_000)     return (num / 1_000).toFixed(1) + 'K';
+  return String(num);
+}
+
+function formatWatchTime(hours) {
+  if (hours >= 1000) return (hours / 1000).toFixed(1) + 'K hrs';
+  if (hours >= 1) return hours.toFixed(1) + ' hrs';
+  return (hours * 60).toFixed(0) + ' min';
+}
+
+function formatTimeAgo(dateString) {
+  if (!dateString) return 'Unknown';
+  const seconds = Math.floor((Date.now() - new Date(dateString)) / 1000);
+  const intervals = { year: 31536000, month: 2592000, week: 604800, day: 86400, hour: 3600, minute: 60 };
+  for (const [unit, s] of Object.entries(intervals)) {
+    const n = Math.floor(seconds / s);
+    if (n >= 1) return `${n} ${unit}${n > 1 ? 's' : ''} ago`;
+  }
+  return 'Just now';
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'Unknown';
+  try {
+    const d = new Date(dateString);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch (e) {
+    return 'Unknown';
+  }
+}
+
+function formatDuration(duration) {
+  if (duration === null || duration === undefined) return '0:00';
+  let total;
+  if (typeof duration === 'number') {
+    total = Math.floor(duration);
+  } else if (typeof duration === 'string') {
+    if (/^\d+$/.test(duration)) {
+      total = parseInt(duration, 10);
+    } else {
+      const m = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+      if (!m) return '0:00';
+      total = (parseInt(m[1]||0)*3600) + (parseInt(m[2]||0)*60) + parseInt(m[3]||0);
+    }
+  } else { return '0:00'; }
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return h > 0
+    ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+    : `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function formatTimestamp(seconds) {
+  if (!seconds) return '0:00';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MISC UI
 // ─────────────────────────────────────────────────────────────────────────────
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text)
-    .then(() => showToast('✅ Copied to clipboard!', 'success'))
-    .catch(() => showToast('Failed to copy', 'error'));
-}
-
 function showNoChannelState() {
   document.querySelector('.page-content').innerHTML = `
     <div style="text-align:center;padding:80px 20px;">
       <div style="font-size:5rem;margin-bottom:24px;">📺</div>
       <h2 style="margin-bottom:12px;">No YouTube Channel Connected</h2>
       <p style="color:var(--text-muted);margin-bottom:32px;max-width:500px;margin-left:auto;margin-right:auto;">
-        Connect your YouTube channel to analyse your videos and get SEO optimisation insights.
+        Connect your YouTube channel to analyse your video performance.
       </p>
       <button class="btn btn-primary" onclick="window.location.href='channel.html'">
         🔗 Connect YouTube Channel
@@ -708,154 +1001,45 @@ function updateSidebar(user) {
 
 function showPageLoading(show) {
   const el = document.querySelector('.page-content');
-  if (el) { el.style.opacity = show ? '0.6' : '1'; el.style.pointerEvents = show ? 'none' : 'auto'; }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FORMATTERS
-// ─────────────────────────────────────────────────────────────────────────────
-function formatNumber(num) {
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
-  if (num >= 1_000)     return (num / 1_000).toFixed(1) + 'K';
-  return String(num);
-}
-
-function formatTimeAgo(dateString) {
-  if (!dateString) return 'Unknown';
-  const seconds = Math.floor((Date.now() - new Date(dateString)) / 1000);
-  const intervals = { year:31536000, month:2592000, week:604800, day:86400, hour:3600, minute:60 };
-  for (const [unit, s] of Object.entries(intervals)) {
-    const n = Math.floor(seconds / s);
-    if (n >= 1) return `${n} ${unit}${n > 1 ? 's' : ''} ago`;
+  if (el) {
+    el.style.opacity = show ? '0.6' : '1';
+    el.style.pointerEvents = show ? 'none' : 'auto';
   }
-  return 'Just now';
-}
-
-function formatDuration(duration) {
-  if (duration === null || duration === undefined) return '0:00';
-  let total;
-  if (typeof duration === 'number') {
-    total = Math.floor(duration);
-  } else if (typeof duration === 'string') {
-    if (/^\d+$/.test(duration)) {
-      total = parseInt(duration, 10);
-    } else {
-      const m = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-      if (!m) return '0:00';
-      total = (parseInt(m[1]||0)*3600) + (parseInt(m[2]||0)*60) + parseInt(m[3]||0);
-    }
-  } else { return '0:00'; }
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  return h > 0
-    ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
-    : `${m}:${String(s).padStart(2,'0')}`;
-}
-
-function getSeoColor(score) {
-  if (score >= 80) return 'var(--success)';
-  if (score >= 60) return 'var(--warning)';
-  return 'var(--danger)';
-}
-
-function escapeHtml(text) {
-  const d = document.createElement('div');
-  d.textContent = text;
-  return d.innerHTML;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STYLES  (injected once)
+// TOAST NOTIFICATIONS
 // ─────────────────────────────────────────────────────────────────────────────
-function injectAnalyzerStyles() {
-  if (document.getElementById('analyzerStyles')) return;
-  const s = document.createElement('style');
-  s.id = 'analyzerStyles';
-  s.textContent = `
-    /* Tab buttons */
-    .tab-btn {
-      padding: 12px 18px;
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 0.88rem;
-      font-weight: 500;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      white-space: nowrap;
-      transition: color 0.2s, border-color 0.2s;
-    }
-    .tab-btn:hover { color: var(--text-primary); }
-    .tab-btn.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
+function showToast(message, type = 'info') {
+  const existing = document.querySelector('.custom-toast');
+  if (existing) existing.remove();
 
-    /* Result items */
-    .result-item {
-      background: var(--bg-secondary);
-      padding: var(--space-md);
-      border-radius: 8px;
-      border-left: 3px solid var(--accent-color);
-    }
-
-    /* Current content boxes */
-    .current-label {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: var(--space-sm);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .current-box {
-      background: var(--bg-secondary);
-      padding: var(--space-md);
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-    }
-
-    /* Score badge */
-    .score-badge {
-      background: var(--accent-color);
-      color: white;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    /* Tag chips */
-    .tag-chip {
-      display: inline-block;
-      background: var(--bg-tertiary);
-      color: var(--text-secondary);
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.82rem;
-      font-weight: 500;
-    }
-    .tag-chip.accent {
-      background: var(--accent-color);
-      color: white;
-    }
-
-    /* Button spinner */
-    .btn-spinner, .step-spinner {
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      border: 2px solid rgba(255,255,255,0.35);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-    }
-    .step-spinner {
-      border-color: rgba(108,99,255,0.3);
-      border-top-color: var(--accent-color);
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+  const toast = document.createElement('div');
+  toast.className = 'custom-toast';
+  toast.style.cssText = `
+    position: fixed; bottom: 24px; right: 24px; z-index: 10000;
+    padding: 12px 20px; border-radius: 10px; font-size: 0.85rem;
+    font-weight: 600; color: white; max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease;
+    background: ${type === 'error' ? '#EF4444' : type === 'success' ? '#10B981' : '#3B82F6'};
   `;
-  document.head.appendChild(s);
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  // Inject animation
+  if (!document.getElementById('toastAnim')) {
+    const style = document.createElement('style');
+    style.id = 'toastAnim';
+    style.textContent = `
+      @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      .custom-toast { transition: opacity 0.3s; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
 }

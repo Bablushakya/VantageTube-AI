@@ -83,7 +83,7 @@ class ThumbnailComposer:
             img = img.convert('RGBA')
             
             # Create text layer
-            txt_layer = Image.new('RGBA', img.size, (255, 255, 255, 0))
+            txt_layer = Image.new('RGBA', img.size, (255, 255, 255, 0))  # type: ignore[arg-type]
             draw = ImageDraw.Draw(txt_layer)
             
             # Prepare text
@@ -166,7 +166,7 @@ class ThumbnailComposer:
             img = img.convert('RGBA')
             
             # Create overlay layer
-            overlay = Image.new('RGBA', img.size, (255, 255, 255, 0))
+            overlay = Image.new('RGBA', img.size, (255, 255, 255, 0))  # type: ignore[arg-type]
             draw = ImageDraw.Draw(overlay)
             
             img_width, img_height = img.size

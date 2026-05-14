@@ -8,7 +8,7 @@ from typing import Optional
 import logging
 import math
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.models.user import UserResponse
 from app.models.content import (
     TitleGenerationRequest, DescriptionGenerationRequest,
@@ -17,13 +17,22 @@ from app.models.content import (
     GeneratedDescription, GeneratedTags,
     GeneratedThumbnailText, ThumbnailTextSuggestion,
     SaveGeneratedContentRequest,
-    GeneratedContentResponse, ContentHistoryResponse
+    GeneratedContentResponse, ContentHistoryResponse,
+    VideoAnalysisRequest, VideoAnalysisResponse,
 )
 from app.services.ai_service import ai_service
 from app.services.content_service import content_service
 from app.services.nano_service import nano_service
 from app.services.ai_quota_manager import quota_manager, QuotaStatus
-from app.api.auth import get_current_user
+from app.services.ai_orchestrator import ai_orchestrator
+from app.services.ai_bundles import VideoAnalysisBundle
+from app.api.auth import get_current_user_id
+from app.services.auth_service import AuthService
+
+
+async def get_current_user(user_id: str = Depends(get_current_user_id)) -> UserResponse:
+    """Resolve user_id to a full UserResponse object."""
+    return await AuthService.get_current_user(user_id)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/content", tags=["Content Generation"])
@@ -105,7 +114,6 @@ def _retry_after_from_message(msg: str) -> str:
     m = msg.lower()
     if "per day" in m or "daily" in m or "midnight" in m:
         now = datetime.now(timezone.utc)
-        from datetime import timedelta
         midnight = (now + timedelta(days=1)).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
@@ -137,6 +145,158 @@ async def get_quota_info(current_user: UserResponse = Depends(get_current_user))
     except Exception as e:
         logger.error(f"Error getting quota info: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve quota information")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VIDEO ANALYSIS BATCH ENDPOINT  (Task 11)
+# Replaces 3 sequential calls (titles + description + tags) with 1 batch call.
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/generate/video-analysis", response_model=VideoAnalysisResponse)
+async def generate_video_analysis(
+    request: VideoAnalysisRequest,
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """
+    Generate titles, description, and tags in a single optimised Gemini call.
+
+    This endpoint replaces the old three-call sequential flow
+    (POST /generate/titles → /generate/description → /generate/tags)
+    with one batch request, reducing Gemini API usage by 66%.
+
+    - **topic**: Video topic / title (required)
+    - **keywords**: Target SEO keywords (optional)
+    - **tone**: Content tone — engaging, professional, educational, casual
+    - **count**: Number of title options (1-10, default 5)
+
+    Returns all three outputs plus cache metadata.
+    Returns 429 when quota is exceeded or cooldown is active.
+    """
+    try:
+        if not request.topic:
+            raise HTTPException(status_code=400, detail="Topic is required")
+
+        logger.info(
+            f"Video analysis batch  user={current_user.id[:8]}...  "
+            f"topic={request.topic!r}  count={request.count}"
+        )
+
+        # Build the bundle and submit to the orchestrator
+        bundle = VideoAnalysisBundle(
+            user_id=current_user.id,
+            topic=request.topic,
+            keywords=request.keywords or [],
+            tone=request.tone or "engaging",
+            count=request.count,
+            video_id=request.video_id,
+        )
+
+        bundle_result = await ai_orchestrator.submit_bundle(current_user.id, bundle)
+
+        # ── Map raw dict results to Pydantic response models ──────────────────
+        raw_titles      = bundle_result.results.get("titles")
+        raw_description = bundle_result.results.get("description")
+        raw_tags        = bundle_result.results.get("tags")
+
+        # titles
+        if raw_titles and isinstance(raw_titles, list):
+            title_objects = [
+                GeneratedTitle(
+                    text=t.get("title", ""),
+                    score=int(t.get("seo_score", 0)),
+                    reasoning=t.get("reasoning", ""),
+                )
+                for t in raw_titles
+            ]
+        else:
+            title_objects = []
+
+        titles_response = GeneratedTitles(
+            titles=title_objects,
+            topic=request.topic,
+            keywords=request.keywords or [],
+            generated_at=_now(),
+        )
+
+        # description
+        if raw_description and isinstance(raw_description, dict):
+            desc_text = raw_description.get("description", "")
+            desc_response = GeneratedDescription(
+                description=desc_text,
+                word_count=len(desc_text.split()),
+                includes_timestamps=True,
+                includes_links=True,
+                includes_cta=True,
+                seo_tips=raw_description.get("seo_tips") or [],
+                generated_at=_now(),
+            )
+        else:
+            desc_response = GeneratedDescription(
+                description="",
+                word_count=0,
+                includes_timestamps=False,
+                includes_links=False,
+                includes_cta=False,
+                seo_tips=[],
+                generated_at=_now(),
+            )
+
+        # tags
+        if raw_tags and isinstance(raw_tags, dict):
+            all_tags = raw_tags.get("all_tags") or []
+            tags_response = GeneratedTags(
+                tags=all_tags,
+                tag_count=len(all_tags),
+                tag_categories={
+                    "primary":   raw_tags.get("primary_tags")   or [],
+                    "secondary": raw_tags.get("secondary_tags") or [],
+                    "long_tail": raw_tags.get("long_tail_tags") or [],
+                    "broad":     raw_tags.get("broad_tags")     or [],
+                },
+                generated_at=_now(),
+            )
+        else:
+            tags_response = GeneratedTags(
+                tags=[],
+                tag_count=0,
+                tag_categories={},
+                generated_at=_now(),
+            )
+
+        # ── Save to history (fire-and-forget) ─────────────────────────────────
+        try:
+            await content_service.save_generated_content(
+                user_id=current_user.id,
+                content_type="title",
+                content=bundle_result.results,
+                video_id=request.video_id,
+                prompt_used=f"VideoAnalysis: {request.topic}",
+            )
+        except Exception as save_err:
+            logger.warning(f"Failed to save video analysis history: {save_err}")
+
+        logger.info(
+            f"Video analysis done  user={current_user.id[:8]}...  "
+            f"cache_hit={bundle_result.cache_hit}  "
+            f"calls={bundle_result.gemini_calls_made}"
+        )
+
+        return VideoAnalysisResponse(
+            titles=titles_response,
+            description=desc_response,
+            tags=tags_response,
+            cache_hit=bundle_result.cache_hit,
+            gemini_calls_made=bundle_result.gemini_calls_made,
+            generated_at=_now(),
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        if _is_gemini_quota_error(e):
+            _raise_gemini_quota_429(e, current_user.id)
+        logger.error(f"Video analysis failed  user={current_user.id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Video analysis failed: {e}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

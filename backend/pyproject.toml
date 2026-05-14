@@ -1,0 +1,8 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.pylance]
+# Ignore Pydantic v2 model inheritance false positives
+# All Optional fields in ContentGenerationRequest have defaults,
+# so passing only topic="Python" is valid at runtime.
+reportCallIssue = "information"

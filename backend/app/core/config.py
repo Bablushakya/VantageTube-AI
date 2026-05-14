@@ -50,11 +50,12 @@ class Settings(BaseSettings):
         """Parse CORS origins from comma-separated string"""
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-        extra = "ignore"  # Ignore extra fields in .env file
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True,
+        "extra": "ignore",  # Ignore extra fields in .env file
+    }
 
 
 # Create global settings instance
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]  # fields loaded from .env at runtime

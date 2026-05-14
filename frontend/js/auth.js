@@ -182,7 +182,6 @@ async function login(email, password) {
         showLoading('login-btn', 'Logging in...');
         
         const response = await api.login(email, password);
-        console.log('Login response:', response);
         
         // Save token to cookie
         api.setToken(response.access_token);

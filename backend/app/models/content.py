@@ -148,3 +148,47 @@ class ContentHistoryResponse(BaseModel):
     """Response model for content generation history"""
     total_count: int
     items: List[GeneratedContentResponse]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VIDEO ANALYSIS BATCH MODELS  (Task 10)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class VideoAnalysisRequest(BaseModel):
+    """
+    Request model for the batch video analysis endpoint.
+
+    Replaces three separate calls (titles + description + tags) with one.
+    Used by POST /api/content/generate/video-analysis.
+    """
+    topic:    str = Field(..., description="Video topic / title (required)")
+    keywords: List[str] = Field(default_factory=list, description="Target SEO keywords")
+    tone:     str = Field("engaging", description="Content tone: engaging, professional, educational, casual")
+    count:    int = Field(5, ge=1, le=10, description="Number of title options to generate (1-10)")
+    video_id: Optional[str] = Field(None, description="Database video ID for history tracking")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "topic":    "How to Learn Python Fast",
+                "keywords": ["python", "programming", "tutorial"],
+                "tone":     "engaging",
+                "count":    5,
+                "video_id": None,
+            }
+        }
+
+
+class VideoAnalysisResponse(BaseModel):
+    """
+    Response model for the batch video analysis endpoint.
+
+    Contains all three generation outputs in a single response,
+    plus metadata about cache usage and API call count.
+    """
+    titles:            GeneratedTitles
+    description:       GeneratedDescription
+    tags:              GeneratedTags
+    cache_hit:         bool = Field(..., description="True if result was served from cache (0 Gemini calls)")
+    gemini_calls_made: int  = Field(..., description="Number of Gemini API calls made (0 on cache hit, 1 on batch call)")
+    generated_at:      datetime

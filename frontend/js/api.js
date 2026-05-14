@@ -130,6 +130,19 @@ class APIClient {
             if (!response.ok) {
                 const error = new Error(data.detail || data.message || 'Request failed');
                 error.status = response.status;
+                // Detect quota errors that may arrive as 500 due to backend wrapping
+                const detail = (data.detail || data.message || '').toLowerCase();
+                const isQuotaMsg = detail.includes('quota exceeded') ||
+                                   detail.includes('quota') && detail.includes('429') ||
+                                   detail.includes('resource_exhausted') ||
+                                   detail.includes('free tier') ||
+                                   detail.includes('rate limit');
+                if (response.status === 500 && isQuotaMsg) {
+                    const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+                    error.quotaExceeded = true;
+                    error.retryAfterSeconds = retryAfter;
+                    error.retryAfterMessage = `AI quota exceeded. Please wait ${retryAfter} seconds before retrying.`;
+                }
                 throw error;
             }
 
@@ -409,6 +422,23 @@ class APIClient {
     }
 
     /**
+     * Generate video analysis (titles + description + tags) in a single batch call.
+     * Used by the Video Analyzer page.
+     *
+     * @param {Object} params
+     * @param {string} params.topic       - Video topic / title (required)
+     * @param {string[]} [params.keywords] - Target SEO keywords
+     * @param {string} [params.tone]       - Content tone (default: "engaging")
+     * @param {number} [params.count]      - Number of title options 1-10 (default: 5)
+     * @param {string} [params.video_id]   - Database video ID for history tracking
+     *
+     * @returns {Promise<{titles, description, tags, cache_hit, gemini_calls_made, generated_at}>}
+     */
+    async generateVideoAnalysis(params) {
+        return this.post('/content/generate/video-analysis', params);
+    }
+
+    /**
      * Generate video titles
      */
     async generateTitles(data) {
@@ -459,6 +489,24 @@ class APIClient {
      */
     async deleteGeneratedContent(contentId) {
         return this.delete(`/content/history/${contentId}`);
+    }
+
+    // ==================== Video Analytics Endpoints ====================
+
+    /**
+     * Get comprehensive video analytics data.
+     * Fetches performance metrics, traffic sources, audience insights, etc.
+     *
+     * @param {string} videoId - Database video ID (not YouTube video ID)
+     * @param {boolean} [forceRefresh=false] - Bypass cache if true
+     * @returns {Promise<Object>} Analytics data
+     */
+    async getVideoAnalytics(videoId, forceRefresh = false) {
+        let endpoint = `/videos/${videoId}/analytics`;
+        if (forceRefresh) {
+            endpoint += '?force_refresh=true';
+        }
+        return this.get(endpoint);
     }
 
     // ==================== Trending Topics Endpoints ====================

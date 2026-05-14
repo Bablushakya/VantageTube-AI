@@ -198,12 +198,49 @@ async function logout() {
   }
 }
 
+/* --- Scroll-Triggered Fade-In --- */
+function initFadeInOnScroll() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.fade-in-section').forEach(el => {
+    observer.observe(el);
+  });
+}
+
+/* --- FAQ Accordion (Replaces broken group-hover) --- */
+function initFAQAccordion() {
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const wasActive = item.classList.contains('active');
+      // Close all
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+      // Toggle this one
+      if (!wasActive) item.classList.add('active');
+    });
+  });
+}
+
+/* --- Initial Page Transition Animation --- */
+function initPageTransition() {
+  document.body.classList.add('page-transition');
+}
+
 /* --- Init on DOM Ready --- */
 document.addEventListener('DOMContentLoaded', () => {
+  initPageTransition();
   initSidebar();
   setActiveNav();
   initNavbarScroll();
   initMobileNav();
   initSmoothScroll();
   initScrollAnimations();
+  initFadeInOnScroll();
+  initFAQAccordion();
 });

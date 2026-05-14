@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.api import auth, users, youtube, seo, content, trending
+from app.api import auth, users, youtube, seo, content, trending, analytics
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -174,6 +174,7 @@ app.include_router(youtube.router,  prefix="/api")
 app.include_router(seo.router,      prefix="/api")
 app.include_router(content.router,  prefix="/api")
 app.include_router(trending.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1,383 +1,150 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login / Sign Up – VantageTube AI</title>
-  <link rel="stylesheet" href="css/main.css" />
-  <link rel="stylesheet" href="css/auth.css" />
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Login | VantageTube AI</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-highest": "#36333e","background": "#14121b","on-surface": "#e6e0ee",
+            "surface-container-low": "#1c1a24","outline-variant": "#484555","on-background": "#e6e0ee",
+            "primary": "#cabeff","primary-container": "#947dff","on-surface-variant": "#c9c4d8",
+            "error": "#ffb4ab","outline": "#938ea1","surface": "#14121b","on-primary-container": "#2a0088",
+            "on-primary": "#31009a","surface-container": "#201e28","secondary-container": "#00b4a0",
+          },
+          spacing: { "lg": "24px","xs": "8px","margin-mobile": "16px","md": "16px","xl": "32px","sm": "12px","base": "4px" },
+          fontFamily: { "body-lg": ["Inter"],"label-caps": ["Inter"],"body-sm": ["Inter"],"page-title": ["Poppins"],"section-title": ["Poppins"] },
+          fontSize: {
+            "body-lg": ["16px", {"lineHeight":"1.6","fontWeight":"400"}],
+            "label-caps": ["12px", {"lineHeight":"1","letterSpacing":"0.05em","fontWeight":"600"}],
+            "body-sm": ["14px", {"lineHeight":"1.5","fontWeight":"400"}],
+            "page-title": ["32px", {"lineHeight":"1.2","letterSpacing":"-0.02em","fontWeight":"600"}],
+            "section-title": ["24px", {"lineHeight":"1.3","letterSpacing":"-0.01em","fontWeight":"600"}],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .glass-card { background: rgba(27,33,64,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(202,190,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.03); }
+    .bg-gradient-mesh {
+      background: radial-gradient(circle at 0% 0%, #1c1a24 0%, transparent 50%),
+                  radial-gradient(circle at 100% 100%, #14121b 0%, transparent 50%),
+                  radial-gradient(circle at 50% 50%, #1b2140 0%, #0b1020 100%);
+    }
+  </style>
 </head>
-<body>
+<body class="bg-background text-on-background font-body-lg min-h-screen flex flex-col items-center justify-center bg-gradient-mesh p-margin-mobile">
 
-  <div class="auth-page">
-
-    <!-- ============================================
-         LEFT PANEL – Branding
-         ============================================ -->
-    <div class="auth-left">
-      <a href="index.html" class="auth-brand">
-        <div class="logo-icon">🎬</div>
-        <span>Vantage<span style="color:var(--primary-light)">Tube</span> AI</span>
-      </a>
-
-      <div class="auth-left-content">
-        <h2>Optimize Your YouTube Channel with AI</h2>
-        <p>
-          Join thousands of creators who use VantageTube AI to improve their SEO,
-          generate better content, and discover trending topics in their niche.
-        </p>
-
-        <div class="auth-features-list">
-          <div class="auth-feature-item">
-            <div class="af-icon">📊</div>
-            <div class="af-text">
-              <strong>Video SEO Analyzer</strong>
-              Get a detailed score and actionable suggestions for every video.
-            </div>
-          </div>
-          <div class="auth-feature-item">
-            <div class="af-icon">✨</div>
-            <div class="af-text">
-              <strong>AI Content Generator</strong>
-              Generate optimized titles, descriptions, and tags instantly.
-            </div>
-          </div>
-          <div class="auth-feature-item">
-            <div class="af-icon">🔥</div>
-            <div class="af-text">
-              <strong>Trending Topic Finder</strong>
-              Discover viral content ideas before your competitors.
-            </div>
-          </div>
-          <div class="auth-feature-item">
-            <div class="af-icon">📈</div>
-            <div class="af-text">
-              <strong>Channel Analytics</strong>
-              Track your growth and performance in one dashboard.
-            </div>
-          </div>
-        </div>
+  <!-- Auth Container -->
+  <main class="w-full max-w-[480px]">
+    <!-- Brand Identity -->
+    <div class="flex flex-col items-center mb-xl">
+      <div class="w-16 h-16 bg-primary-container rounded-xl flex items-center justify-center shadow-lg mb-md">
+        <span class="material-symbols-outlined text-on-primary-container text-[40px]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
       </div>
-
-      <div class="auth-left-footer">
-        © 2024 VantageTube AI · Academic Prototype
-      </div>
+      <h1 class="font-page-title text-page-title text-primary font-bold">VantageTube AI</h1>
+      <p class="text-on-surface-variant font-body-sm">The creator's command center.</p>
     </div>
 
-    <!-- ============================================
-         RIGHT PANEL – Form
-         ============================================ -->
-    <div class="auth-right">
-      <div class="auth-form-container">
+    <!-- Login Card -->
+    <div class="glass-card rounded-xl p-xl flex flex-col gap-lg">
+      <div class="text-center">
+        <h2 class="font-section-title text-section-title text-on-surface mb-xs">Welcome Back</h2>
+        <p class="text-on-surface-variant font-body-sm">Sign in to continue to your dashboard</p>
+      </div>
 
-        <div class="auth-form-header">
-          <h1 id="formTitle">Welcome back</h1>
-          <p id="formSubtitle">Sign in to your VantageTube AI account</p>
+      <!-- Google OAuth Button -->
+      <button id="googleLoginBtn" class="w-full flex items-center justify-center gap-md bg-primary text-on-primary font-body-lg font-bold py-md px-lg rounded-lg hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-[0_0_20px_rgba(202,190,255,0.2)]">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <div class="flex items-center gap-md">
+        <div class="h-[1px] flex-1 bg-outline-variant"></div>
+        <span class="text-label-caps text-on-surface-variant uppercase">Or with email</span>
+        <div class="h-[1px] flex-1 bg-outline-variant"></div>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="flex flex-col gap-md">
+        <div id="authError" class="hidden bg-red-900/30 border border-red-500/40 text-red-300 text-sm px-md py-sm rounded-lg"></div>
+
+        <div class="flex flex-col gap-xs">
+          <label class="text-label-caps text-on-surface-variant px-base" for="email">EMAIL ADDRESS</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">mail</span>
+            <input class="w-full bg-surface-container border border-outline-variant rounded-lg py-sm pl-[48px] pr-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-outline/50" id="email" placeholder="name@vantage.ai" type="email" required/>
+          </div>
         </div>
 
-        <!-- Error/Success Messages -->
-        <div id="auth-error" class="error-message" style="display: none;"></div>
-        <div id="auth-success" class="success-message" style="display: none;"></div>
-
-        <!-- Tab Switcher -->
-        <div class="auth-tabs">
-          <button class="auth-tab active" id="loginTab" onclick="switchTab('login')">Log In</button>
-          <button class="auth-tab" id="signupTab" onclick="switchTab('signup')">Sign Up</button>
+        <div class="flex flex-col gap-xs">
+          <div class="flex justify-between items-center px-base">
+            <label class="text-label-caps text-on-surface-variant" for="password">PASSWORD</label>
+            <a class="text-body-sm text-primary hover:underline" href="#">Forgot Password?</a>
+          </div>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">lock</span>
+            <input class="w-full bg-surface-container border border-outline-variant rounded-lg py-sm pl-[48px] pr-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-outline/50" id="password" placeholder="••••••••" type="password" required/>
+          </div>
         </div>
 
-        <!-- Google Button -->
-        <button class="btn-google" onclick="handleGoogleAuth()">
-          <svg class="google-icon" viewBox="0 0 24 24" fill="none">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
-          Continue with Google
+        <button id="loginBtn" class="w-full mt-base bg-primary-container text-on-primary-container font-body-lg font-bold py-sm rounded-lg hover:opacity-90 active:scale-[0.98] transition-all duration-200" type="submit">
+          Sign In
         </button>
+      </form>
 
-        <div class="auth-divider">
-          <span>or continue with email</span>
-        </div>
-
-        <!-- ============================================
-             LOGIN FORM
-             ============================================ -->
-        <form id="loginForm" onsubmit="handleLogin(event)">
-          <div class="form-group">
-            <label class="form-label" for="loginEmail">Email Address</label>
-            <div class="input-wrapper">
-              <span class="input-icon">✉️</span>
-              <input
-                type="email"
-                id="loginEmail"
-                class="form-input"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-            <span class="form-error" id="loginEmailError">Please enter a valid email.</span>
+      <!-- Register Tab -->
+      <div class="border-t border-outline-variant pt-lg">
+        <h3 class="text-center text-sm text-on-surface-variant mb-md">New to VantageTube?</h3>
+        <form id="registerForm" class="flex flex-col gap-md hidden">
+          <div class="flex flex-col gap-xs">
+            <label class="text-label-caps text-on-surface-variant px-base" for="regEmail">EMAIL</label>
+            <input class="w-full bg-surface-container border border-outline-variant rounded-lg py-sm px-md text-on-surface focus:outline-none focus:border-primary transition-all" id="regEmail" placeholder="name@email.com" type="email"/>
           </div>
-
-          <div class="form-group">
-            <label class="form-label" for="loginPassword">Password</label>
-            <div class="input-wrapper">
-              <span class="input-icon">🔒</span>
-              <input
-                type="password"
-                id="loginPassword"
-                class="form-input"
-                placeholder="Enter your password"
-                required
-              />
-              <button type="button" class="input-toggle" onclick="togglePassword('loginPassword', this)">👁️</button>
-            </div>
-            <span class="form-error" id="loginPasswordError">Password is required.</span>
+          <div class="flex flex-col gap-xs">
+            <label class="text-label-caps text-on-surface-variant px-base" for="regPassword">PASSWORD</label>
+            <input class="w-full bg-surface-container border border-outline-variant rounded-lg py-sm px-md text-on-surface focus:outline-none focus:border-primary transition-all" id="regPassword" placeholder="Min. 8 characters" type="password"/>
           </div>
-
-          <div class="form-footer">
-            <label class="form-checkbox">
-              <input type="checkbox" id="rememberMe" />
-              Remember me
-            </label>
-            <a href="#" class="form-link">Forgot password?</a>
-          </div>
-
-          <button type="submit" class="btn-submit" id="loginBtn">
-            <span class="btn-text">Sign In →</span>
-            <span class="spinner"></span>
+          <button id="registerBtn" class="w-full bg-primary-container text-on-primary-container font-bold py-sm rounded-lg hover:opacity-90 transition-all" type="button">
+            Create Account
           </button>
         </form>
-
-        <!-- ============================================
-             SIGNUP FORM
-             ============================================ -->
-        <form id="signupForm" style="display:none;" onsubmit="handleSignup(event)">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="firstName">First Name</label>
-              <input type="text" id="firstName" class="form-input" placeholder="Alex" required />
-              <span class="form-error" id="firstNameError">Required.</span>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="lastName">Last Name</label>
-              <input type="text" id="lastName" class="form-input" placeholder="Johnson" required />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="signupEmail">Email Address</label>
-            <div class="input-wrapper">
-              <span class="input-icon">✉️</span>
-              <input
-                type="email"
-                id="signupEmail"
-                class="form-input"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-            <span class="form-error" id="signupEmailError">Please enter a valid email.</span>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="signupPassword">Password</label>
-            <div class="input-wrapper">
-              <span class="input-icon">🔒</span>
-              <input
-                type="password"
-                id="signupPassword"
-                class="form-input"
-                placeholder="Create a strong password"
-                required
-                oninput="checkPasswordStrength(this.value)"
-              />
-              <button type="button" class="input-toggle" onclick="togglePassword('signupPassword', this)">👁️</button>
-            </div>
-            <div class="password-strength">
-              <div class="strength-bar">
-                <div class="strength-fill" id="strengthFill"></div>
-              </div>
-              <span class="strength-text" id="strengthText">Enter a password</span>
-            </div>
-            <span class="form-error" id="signupPasswordError">Password must be at least 8 characters.</span>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="confirmPassword">Confirm Password</label>
-            <div class="input-wrapper">
-              <span class="input-icon">🔒</span>
-              <input
-                type="password"
-                id="confirmPassword"
-                class="form-input"
-                placeholder="Repeat your password"
-                required
-              />
-            </div>
-            <span class="form-error" id="confirmPasswordError">Passwords do not match.</span>
-          </div>
-
-          <div class="form-group">
-            <label class="form-checkbox">
-              <input type="checkbox" id="agreeTerms" required />
-              I agree to the <a href="#" class="form-link">Terms of Service</a> and <a href="#" class="form-link">Privacy Policy</a>
-            </label>
-          </div>
-
-          <button type="submit" class="btn-submit" id="signupBtn">
-            <span class="btn-text">Create Account →</span>
-            <span class="spinner"></span>
-          </button>
-        </form>
-
-        <!-- Switch Link -->
-        <div class="auth-switch" id="authSwitch">
-          Don't have an account?
-          <a href="#" onclick="switchTab('signup'); return false;">Sign up free</a>
-        </div>
-
+        <button id="toggleRegister" class="w-full py-sm border border-outline-variant text-on-surface font-bold rounded-lg hover:bg-surface-container-highest transition-colors text-sm">
+          Create an Account
+        </button>
       </div>
     </div>
 
+    <!-- Footer Link -->
+    <div class="mt-xl text-center">
+      <p class="text-on-surface-variant font-body-lg text-sm">
+        <a class="text-primary hover:underline" href="index.html">← Back to Home</a>
+      </p>
+    </div>
+  </main>
+
+  <!-- Visual Accents -->
+  <div class="fixed bottom-0 left-0 w-full h-[300px] overflow-hidden pointer-events-none -z-10 opacity-30">
+    <div class="absolute bottom-[-100px] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary-container/20 blur-[120px] rounded-full"></div>
   </div>
 
-  <!-- Scripts -->
   <script src="js/cookie-manager.js"></script>
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/main.js"></script>
-  <script>
-    // Redirect if already authenticated
-    redirectIfAuthenticated();
-
-    /* --- Tab Switching --- */
-    function switchTab(tab) {
-      const loginForm   = document.getElementById('loginForm');
-      const signupForm  = document.getElementById('signupForm');
-      const loginTab    = document.getElementById('loginTab');
-      const signupTab   = document.getElementById('signupTab');
-      const title       = document.getElementById('formTitle');
-      const subtitle    = document.getElementById('formSubtitle');
-      const authSwitch  = document.getElementById('authSwitch');
-
-      if (tab === 'login') {
-        loginForm.style.display  = 'block';
-        signupForm.style.display = 'none';
-        loginTab.classList.add('active');
-        signupTab.classList.remove('active');
-        title.textContent    = 'Welcome back';
-        subtitle.textContent = 'Sign in to your VantageTube AI account';
-        authSwitch.innerHTML = `Don't have an account? <a href="#" onclick="switchTab('signup'); return false;">Sign up free</a>`;
-      } else {
-        loginForm.style.display  = 'none';
-        signupForm.style.display = 'block';
-        signupTab.classList.add('active');
-        loginTab.classList.remove('active');
-        title.textContent    = 'Create your account';
-        subtitle.textContent = 'Start optimizing your YouTube channel today';
-        authSwitch.innerHTML = `Already have an account? <a href="#" onclick="switchTab('login'); return false;">Sign in</a>`;
-      }
-    }
-
-    /* --- Toggle Password Visibility --- */
-    function togglePassword(inputId, btn) {
-      const input = document.getElementById(inputId);
-      if (input.type === 'password') {
-        input.type = 'text';
-        btn.textContent = '🙈';
-      } else {
-        input.type = 'password';
-        btn.textContent = '👁️';
-      }
-    }
-
-    /* --- Password Strength Checker --- */
-    function checkPasswordStrength(password) {
-      const fill = document.getElementById('strengthFill');
-      const text = document.getElementById('strengthText');
-      let strength = 0;
-
-      if (password.length >= 8)  strength++;
-      if (password.length >= 12) strength++;
-      if (/[A-Z]/.test(password)) strength++;
-      if (/[0-9]/.test(password)) strength++;
-      if (/[^A-Za-z0-9]/.test(password)) strength++;
-
-      const levels = [
-        { width: '0%',   color: 'var(--danger)',  label: 'Enter a password' },
-        { width: '20%',  color: 'var(--danger)',  label: 'Very weak' },
-        { width: '40%',  color: 'var(--warning)', label: 'Weak' },
-        { width: '60%',  color: 'var(--warning)', label: 'Fair' },
-        { width: '80%',  color: 'var(--success)', label: 'Strong' },
-        { width: '100%', color: 'var(--success)', label: 'Very strong ✓' },
-      ];
-
-      const level = password.length === 0 ? levels[0] : levels[Math.min(strength, 5)];
-      fill.style.width      = level.width;
-      fill.style.background = level.color;
-      text.textContent      = level.label;
-      text.style.color      = level.color;
-    }
-
-    /* --- Handle Login --- */
-    async function handleLogin(e) {
-      e.preventDefault();
-      clearError();
-      
-      const email = document.getElementById('loginEmail').value;
-      const password = document.getElementById('loginPassword').value;
-      
-      try {
-        // Validate form
-        validateLoginForm(email, password);
-        
-        // Call login function from auth.js
-        await login(email, password);
-      } catch (error) {
-        console.error('Login error:', error);
-        showError(error.message);
-      }
-    }
-
-    /* --- Handle Signup --- */
-    async function handleSignup(e) {
-      e.preventDefault();
-      clearError();
-      
-      const firstName = document.getElementById('firstName').value;
-      const lastName = document.getElementById('lastName').value;
-      const email = document.getElementById('signupEmail').value;
-      const password = document.getElementById('signupPassword').value;
-      const confirmPassword = document.getElementById('confirmPassword').value;
-      const agreeTerms = document.getElementById('agreeTerms').checked;
-      
-      try {
-        // Check terms agreement
-        if (!agreeTerms) {
-          throw new Error('Please agree to the Terms of Service and Privacy Policy');
-        }
-        
-        // Create display name
-        const displayName = `${firstName} ${lastName}`.trim();
-        
-        // Validate form
-        validateRegistrationForm(email, password, confirmPassword, displayName);
-        
-        // Call register function from auth.js with correct parameters
-        await register(email, password, firstName, lastName, displayName);
-      } catch (error) {
-        console.error('Signup error:', error);
-        showError(error.message);
-      }
-    }
-
-    /* --- Handle Google Auth --- */
-    function handleGoogleAuth() {
-      showToast('Google authentication is not yet configured', 'info');
-      // TODO: Implement Google OAuth when ready
-    }
-  </script>
-
 </body>
 </html>

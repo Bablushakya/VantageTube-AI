@@ -1,235 +1,278 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard – VantageTube AI</title>
-  <link rel="stylesheet" href="../css/main.css" />
-  <link rel="stylesheet" href="../css/dashboard.css" />
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>VantageTube AI Dashboard</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode:"class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-highest":"#36333e","background":"#14121b","on-surface":"#e6e0ee",
+            "surface-container-low":"#1c1a24","outline-variant":"#484555","on-background":"#e6e0ee",
+            "primary":"#cabeff","primary-container":"#947dff","on-surface-variant":"#c9c4d8",
+            "error":"#ffb4ab","outline":"#938ea1","surface":"#14121b","on-primary-container":"#2a0088",
+            "on-primary":"#31009a","surface-container-high":"#2b2933","surface-container":"#201e28",
+            "secondary":"#4ddcc6","tertiary":"#ffb780","secondary-container":"#00b4a0",
+          },
+          spacing: { "lg":"24px","xs":"8px","margin-desktop":"48px","md":"16px","xl":"32px","sm":"12px" },
+          fontFamily: { "body-lg":["Inter"],"label-caps":["Inter"],"body-sm":["Inter"],"metric-display":["Poppins"],"page-title":["Poppins"],"section-title":["Poppins"],"metric-sub":["Poppins"] },
+          fontSize: {
+            "body-lg":["16px",{"lineHeight":"1.6","fontWeight":"400"}],
+            "label-caps":["12px",{"lineHeight":"1","letterSpacing":"0.05em","fontWeight":"600"}],
+            "body-sm":["14px",{"lineHeight":"1.5","fontWeight":"400"}],
+            "metric-display":["36px",{"lineHeight":"1.1","letterSpacing":"-0.03em","fontWeight":"700"}],
+            "page-title":["32px",{"lineHeight":"1.2","letterSpacing":"-0.02em","fontWeight":"600"}],
+            "section-title":["24px",{"lineHeight":"1.3","letterSpacing":"-0.01em","fontWeight":"600"}],
+            "metric-sub":["28px",{"lineHeight":"1.1","fontWeight":"600"}],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #14121b; color: #e6e0ee; }
+    .glass-card { background: #1b2140; border: 1px solid rgba(147,142,161,0.2); position: relative; overflow: hidden; }
+    .glass-card::before { content:""; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.05),transparent); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  </style>
 </head>
-<body>
+<body class="bg-background text-on-surface">
 
-  <!-- Sidebar Overlay (mobile) -->
-  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;" onclick="document.querySelector('.sidebar').classList.remove('open');this.style.display='none';"></div>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full flex flex-col p-md z-40 bg-surface-container border-r border-outline-variant w-64 shadow-lg">
+  <div class="mb-xl px-md">
+    <a href="../index.html"><h1 class="font-page-title text-2xl font-black text-primary">VantageTube AI</h1></a>
+    <p class="text-on-surface-variant font-body-sm opacity-70" id="sidebarPlanLabel">Creator Pro</p>
+  </div>
+  <nav class="flex-1 flex flex-col gap-xs">
+    <a href="dashboard.html" class="flex items-center gap-md bg-primary-container text-on-primary-container rounded-lg px-md py-sm hover:opacity-90 transition-all duration-200">
+      <span class="material-symbols-outlined">dashboard</span><span class="font-body-lg">Dashboard</span>
+    </a>
+    <a href="channel.html" class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-lg px-md py-sm transition-all duration-200">
+      <span class="material-symbols-outlined">analytics</span><span class="font-body-lg">Channel Overview</span>
+    </a>
+    <a href="analyzer.html" class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-lg px-md py-sm transition-all duration-200">
+      <span class="material-symbols-outlined">movie_edit</span><span class="font-body-lg">Video Analyzer</span>
+    </a>
+    <a href="generator.html" class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-lg px-md py-sm transition-all duration-200">
+      <span class="material-symbols-outlined">auto_awesome</span><span class="font-body-lg">AI Generator</span>
+    </a>
+    <a href="thumbnail.html" class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-lg px-md py-sm transition-all duration-200">
+      <span class="material-symbols-outlined">image_search</span><span class="font-body-lg">Thumbnail Generator</span>
+    </a>
+    <a href="trending.html" class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-lg px-md py-sm transition-all duration-200">
+      <span class="material-symbols-outlined">trending_up</span><span class="font-body-lg">Trending Ideas</span>
+    </a>
+    <a href="profile.html" class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-lg px-md py-sm transition-all duration-200">
+      <span class="material-symbols-outlined">person</span><span class="font-body-lg">Profile</span>
+    </a>
+    <a href="settings.html" class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-lg px-md py-sm transition-all duration-200">
+      <span class="material-symbols-outlined">settings</span><span class="font-body-lg">Settings</span>
+    </a>
+  </nav>
+  <div class="mt-auto flex flex-col gap-xs border-t border-outline-variant pt-md">
+    <!-- Quota Bar (populated by JS) -->
+    <div id="quotaBarContainer"></div>
+    <a href="../auth.html" class="flex items-center gap-md text-on-surface-variant hover:text-on-surface px-md py-sm transition-all" onclick="logout()">
+      <span class="material-symbols-outlined">logout</span><span class="font-body-lg">Sign Out</span>
+    </a>
+    <button class="mt-md w-full bg-primary-container text-on-primary-container font-bold py-sm rounded-lg hover:scale-[1.02] active:scale-95 transition-transform">
+      Upgrade to Enterprise
+    </button>
+  </div>
+</aside>
 
-  <div class="app-layout">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-margin-desktop py-md sticky top-0 z-50 bg-surface-container-low border-b border-outline-variant shadow-sm ml-64 max-w-[calc(100%-16rem)]">
+  <div class="flex items-center gap-lg">
+    <div class="relative w-96">
+      <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+      <input class="bg-surface-container-highest text-on-surface rounded-full py-sm pl-xl pr-md border-none focus:ring-2 focus:ring-primary w-full text-body-sm" placeholder="Search analytics, videos, or AI tools..." type="text"/>
+    </div>
+  </div>
+  <div class="flex items-center gap-md">
+    <a href="generator.html" class="bg-primary text-on-primary px-lg py-sm rounded-full font-bold hover:shadow-[0_0_20px_rgba(202,190,255,0.4)] transition-all">
+      Create New Video
+    </a>
+    <div class="flex gap-sm">
+      <button class="p-sm hover:bg-surface-container-highest rounded-full transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+      </button>
+      <button class="p-sm hover:bg-surface-container-highest rounded-full transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant">help</span>
+      </button>
+      <a href="profile.html" class="h-10 w-10 rounded-full bg-primary-container flex items-center justify-center cursor-pointer">
+        <span class="material-symbols-outlined text-on-primary-container">account_circle</span>
+      </a>
+    </div>
+  </div>
+</header>
 
-    <!-- ============================================
-         SIDEBAR
-         ============================================ -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <div class="logo-icon">🎬</div>
-        <span class="logo-text">Vantage<span>Tube</span> AI</span>
-      </div>
+<!-- Main Content -->
+<main class="ml-64 p-margin-desktop max-w-[1440px]">
 
-      <nav class="sidebar-nav">
-        <span class="nav-section-label">Main</span>
-
-        <a href="dashboard.html" class="nav-item active">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          Dashboard
-        </a>
-
-        <a href="channel.html" class="nav-item">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor"/></svg>
-          Channel Overview
-        </a>
-
-        <span class="nav-section-label">Tools</span>
-
-        <a href="analyzer.html" class="nav-item">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Video Analyzer
-        </a>
-
-        <a href="generator.html" class="nav-item">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          AI Generator
-        </a>
-
-        <a href="thumbnail.html" class="nav-item">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
-          Thumbnail Generator
-        </a>
-
-        <a href="trending.html" class="nav-item">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          Trending Ideas
-        </a>
-
-        <span class="nav-section-label">Account</span>
-
-        <a href="profile.html" class="nav-item">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          Profile
-        </a>
-
-        <a href="settings.html" class="nav-item">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Settings
-        </a>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <div class="avatar">TA</div>
-          <div class="user-info">
-            <div class="user-name">TechWithAlex</div>
-            <div class="user-plan">Free Plan</div>
-          </div>
-          <span style="color:var(--text-muted);font-size:0.8rem;">⋯</span>
-        </div>
-      </div>
-    </aside>
-
-    <!-- ============================================
-         MAIN CONTENT
-         ============================================ -->
-    <div class="main-content">
-
-      <!-- Topbar -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').style.display='block';">☰</button>
-          <span class="topbar-title">Dashboard</span>
-        </div>
-        <div class="topbar-right">
-          <button class="topbar-icon-btn" title="Notifications">
-            🔔
-            <span class="notif-dot"></span>
-          </button>
-          <button class="topbar-icon-btn" title="Help">❓</button>
-          <button class="btn btn-ghost btn-sm logout-btn" onclick="logout()">Log Out</button>
-        </div>
-      </header>
-
-      <!-- Page Content -->
-      <main class="page-content">
-
-        <!-- Welcome Banner -->
-        <div class="welcome-banner">
-          <div class="welcome-text">
-            <h2 id="welcomeMessage">Good morning! 👋</h2>
-            <p>Here's what's happening with your channel today.</p>
-          </div>
-          <div class="welcome-actions">
-            <a href="analyzer.html" class="btn btn-outline btn-sm">📊 Analyze Video</a>
-            <a href="generator.html" class="btn btn-primary btn-sm">✨ Generate Content</a>
-          </div>
-        </div>
-
-        <!-- Loading State -->
-        <div id="loadingState" style="display: none; text-align: center; padding: 40px;">
-          <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto 20px;"></div>
-          <p style="color: var(--text-muted);">Loading your dashboard...</p>
-        </div>
-
-        <!-- Error State -->
-        <div id="errorState" style="display: none; text-align: center; padding: 40px;">
-          <p style="color: var(--danger); margin-bottom: 20px;">Failed to load dashboard data</p>
-          <button class="btn btn-primary" onclick="loadDashboard()">Retry</button>
-        </div>
-
-        <!-- Dashboard Content -->
-        <div id="dashboardContent" style="display: none;">
-
-        <!-- Stats Grid -->
-        <div class="stats-grid" id="statsGrid">
-          <!-- Populated by JS -->
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="quick-actions-grid">
-          <a href="analyzer.html" class="quick-action-card">
-            <div class="qa-icon" style="background:rgba(108,99,255,0.12);">📊</div>
-            <span class="qa-label">Analyze SEO</span>
-          </a>
-          <a href="generator.html" class="quick-action-card">
-            <div class="qa-icon" style="background:rgba(255,101,132,0.12);">✨</div>
-            <span class="qa-label">AI Generate</span>
-          </a>
-          <a href="trending.html" class="quick-action-card">
-            <div class="qa-icon" style="background:rgba(16,185,129,0.12);">🔥</div>
-            <span class="qa-label">Trending Ideas</span>
-          </a>
-          <a href="channel.html" class="quick-action-card">
-            <div class="qa-icon" style="background:rgba(245,158,11,0.12);">📺</div>
-            <span class="qa-label">My Channel</span>
-          </a>
-        </div>
-
-        <!-- Two Column Grid -->
-        <div class="dashboard-grid">
-
-          <!-- Recent Videos -->
-          <div class="card" style="grid-column: 1 / -1;">
-            <div class="card-header">
-              <span class="card-title">Recent Videos</span>
-              <a href="channel.html" class="card-action">View all →</a>
-            </div>
-            <div class="table-container">
-              <table class="data-table" id="recentVideosTable">
-                <thead>
-                  <tr>
-                    <th>Video</th>
-                    <th>Views</th>
-                    <th>Likes</th>
-                    <th>SEO Score</th>
-                    <th>Published</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="recentVideosBody">
-                  <!-- Populated by JS -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Bottom Grid -->
-        <div class="dashboard-grid">
-
-          <!-- Activity Feed -->
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Recent Activity</span>
-            </div>
-            <div class="activity-feed" id="activityFeed">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-
-          <!-- Top Trending Preview -->
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">🔥 Trending in Your Niche</span>
-              <a href="trending.html" class="card-action">See all →</a>
-            </div>
-            <div id="trendingPreview">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-
-          
-
-        </div>
-
-        </div>
-        <!-- End Dashboard Content -->
-
-      </main>
+  <!-- Welcome Header -->
+  <div class="mb-xl flex justify-between items-end">
+    <div>
+      <h2 class="font-page-title text-page-title mb-xs" id="welcomeMessage">Welcome back 👋</h2>
+      <p class="text-on-surface-variant font-body-lg" id="welcomeSubtitle">Here's what's happening with your channel today.</p>
+    </div>
+    <div class="flex gap-sm">
+      <button class="flex items-center gap-xs px-md py-sm bg-surface-container rounded-lg border border-outline-variant hover:bg-surface-container-high transition-colors">
+        <span class="material-symbols-outlined text-sm">calendar_today</span>
+        <span class="font-label-caps">Last 28 Days</span>
+        <span class="material-symbols-outlined text-sm">expand_more</span>
+      </button>
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script src="../js/cookie-manager.js"></script>
-  <script src="../js/api.js"></script>
-  <script src="../js/auth.js"></script>
-  <script src="../js/main.js"></script>
-  <script src="../js/dashboard.js"></script>
+  <!-- Loading / Error States -->
+  <div id="loadingState" style="display:none;" class="text-center py-16">
+    <div class="inline-block w-10 h-10 border-4 border-primary-container border-t-primary rounded-full animate-spin mb-4"></div>
+    <p class="text-on-surface-variant">Loading your dashboard...</p>
+  </div>
+  <div id="errorState" style="display:none;" class="text-center py-16">
+    <p class="text-error mb-4">Failed to load dashboard data</p>
+    <button class="bg-primary-container text-on-primary-container px-lg py-sm rounded-lg font-bold" onclick="loadDashboard()">Retry</button>
+  </div>
 
+  <!-- Dashboard Content -->
+  <div id="dashboardContent" style="display:none;">
+
+    <!-- Metric Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-lg mb-xl" id="statsGrid">
+      <!-- Populated by dashboard.js -->
+    </div>
+
+    <!-- Charts + Quick Actions Bento -->
+    <div class="grid grid-cols-12 gap-lg mb-xl">
+      <!-- Main Chart -->
+      <div class="col-span-12 lg:col-span-8 glass-card p-lg rounded-xl">
+        <div class="flex justify-between items-center mb-xl">
+          <h3 class="font-section-title text-section-title">Performance Trends</h3>
+          <div class="flex gap-md">
+            <div class="flex items-center gap-xs"><span class="h-2 w-2 rounded-full bg-primary"></span><span class="font-body-sm text-on-surface-variant">Views</span></div>
+            <div class="flex items-center gap-xs"><span class="h-2 w-2 rounded-full bg-secondary"></span><span class="font-body-sm text-on-surface-variant">Revenue</span></div>
+          </div>
+        </div>
+        <!-- Chart placeholder — JS can replace or overlay a canvas here -->
+        <div class="h-80 w-full relative">
+          <div class="absolute inset-0 flex items-end justify-between px-md pb-xs gap-1" id="performanceChart">
+            <div class="w-1/12 bg-primary-container opacity-20 h-1/2 rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container opacity-30 h-2/3 rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container opacity-40 h-3/4 rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container opacity-30 h-1/2 rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container opacity-50 h-5/6 rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container opacity-60 h-4/5 rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container opacity-80 h-full rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container opacity-60 h-3/4 rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container opacity-40 h-1/2 rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container opacity-50 h-2/3 rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container opacity-70 h-4/5 rounded-t-sm"></div>
+            <div class="w-1/12 bg-primary-container h-full rounded-t-sm shadow-[0_0_15px_rgba(202,190,255,0.3)]"></div>
+          </div>
+          <div class="absolute inset-0 border-b border-l border-outline-variant opacity-30"></div>
+        </div>
+      </div>
+
+      <!-- Quick Actions + AI Insights -->
+      <div class="col-span-12 lg:col-span-4 flex flex-col gap-lg">
+        <div class="glass-card p-lg rounded-xl">
+          <h3 class="font-section-title text-section-title mb-md">Quick Actions</h3>
+          <div class="grid grid-cols-2 gap-md" id="quickActionsGrid">
+            <a href="analyzer.html" class="flex flex-col items-center gap-xs p-md bg-surface-container-highest rounded-lg hover:bg-primary-container hover:text-on-primary-container transition-all group">
+              <span class="material-symbols-outlined text-primary group-hover:text-on-primary-container">movie_edit</span>
+              <span class="font-label-caps text-[10px]">Analyze Video</span>
+            </a>
+            <a href="thumbnail.html" class="flex flex-col items-center gap-xs p-md bg-surface-container-highest rounded-lg hover:bg-primary-container hover:text-on-primary-container transition-all group">
+              <span class="material-symbols-outlined text-primary group-hover:text-on-primary-container">add_photo_alternate</span>
+              <span class="font-label-caps text-[10px]">New Thumbnail</span>
+            </a>
+            <a href="generator.html" class="flex flex-col items-center gap-xs p-md bg-surface-container-highest rounded-lg hover:bg-primary-container hover:text-on-primary-container transition-all group">
+              <span class="material-symbols-outlined text-primary group-hover:text-on-primary-container">psychology</span>
+              <span class="font-label-caps text-[10px]">Script Gen</span>
+            </a>
+            <a href="trending.html" class="flex flex-col items-center gap-xs p-md bg-surface-container-highest rounded-lg hover:bg-primary-container hover:text-on-primary-container transition-all group">
+              <span class="material-symbols-outlined text-primary group-hover:text-on-primary-container">trending_up</span>
+              <span class="font-label-caps text-[10px]">Trending Ideas</span>
+            </a>
+          </div>
+        </div>
+        <!-- AI Insights -->
+        <div class="glass-card p-lg rounded-xl flex-1">
+          <h3 class="font-section-title text-section-title mb-md">AI Insights</h3>
+          <div class="space-y-md" id="aiInsightsFeed">
+            <!-- Populated by dashboard.js -->
+            <div class="flex gap-md p-sm bg-surface-container-low rounded-lg border-l-4 border-primary animate-pulse">
+              <span class="material-symbols-outlined text-primary">lightbulb</span>
+              <div class="flex-1">
+                <div class="h-3 bg-surface-container-highest rounded w-3/4 mb-2"></div>
+                <div class="h-2 bg-surface-container-highest rounded w-full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Performing Videos Table -->
+    <div class="glass-card rounded-xl overflow-hidden mb-xl">
+      <div class="p-lg border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+        <h3 class="font-section-title text-section-title">Recent Videos</h3>
+        <a href="channel.html" class="text-primary font-label-caps hover:underline">View All Content</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-surface-container text-on-surface-variant font-label-caps border-b border-outline-variant">
+            <tr>
+              <th class="px-lg py-md">Video</th>
+              <th class="px-lg py-md">Published</th>
+              <th class="px-lg py-md text-right">Views</th>
+              <th class="px-lg py-md text-right">Likes</th>
+              <th class="px-lg py-md text-right">SEO Score</th>
+              <th class="px-lg py-md">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant" id="recentVideosBody">
+            <!-- Populated by dashboard.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Trending Preview -->
+    <div class="glass-card rounded-xl p-lg mb-xl">
+      <div class="flex justify-between items-center mb-md">
+        <h3 class="font-section-title text-section-title">🔥 Trending in Your Niche</h3>
+        <a href="trending.html" class="text-primary font-label-caps hover:underline">See all →</a>
+      </div>
+      <div id="trendingPreview" class="grid grid-cols-1 md:grid-cols-3 gap-md">
+        <!-- Populated by dashboard.js -->
+      </div>
+    </div>
+
+  </div><!-- end dashboardContent -->
+
+  <!-- Activity Feed (always visible) -->
+  <div class="glass-card rounded-xl p-lg" id="activityFeedCard" style="display:none;">
+    <h3 class="font-section-title text-section-title mb-md">Recent Activity</h3>
+    <div class="activity-feed" id="activityFeed"></div>
+  </div>
+
+</main>
+
+<script src="../js/cookie-manager.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/mockData.js"></script>
+<script src="../js/dashboard.js"></script>
 </body>
 </html>
